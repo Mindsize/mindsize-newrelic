@@ -19,11 +19,28 @@ class Plugin {
 	 * Constructor.
 	 */
 	public function __construct() {
-		// Register the CLI command if we're running WP_CLI
 
 	}
 
 	public function init() {
+		// check for newrelic extension, show notice if it's not there and bail
+		if ( ! extension_loaded( 'newrelic' ) ) {
+			add_action( 'admin_notices', array( $this, 'nr_not_installed' ) );
+			return;
+		}
+	}
 
+	/**
+	 * Admin notice in case the new relic extension is not available to PHP. Hooked into admin_notices from
+	 * self::init();
+	 *
+	 * @see  admin_notices hook
+	 *
+	 * @since  1.0.0
+	 */
+	public function nr_not_installed() {
+		?>
+		<div class="error"><p><strong>Mindsize New Relic: </strong><?php esc_html_e( 'New Relic is not installed.', MINDSIZE_NR_SLUG ) ?></p></div>
+		<?php
 	}
 }
