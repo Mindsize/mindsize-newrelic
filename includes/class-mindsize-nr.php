@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Plugin {
 
 	private $admin = null;
+	private $apm = null;
 
 	public $network = false;
 
@@ -41,6 +42,8 @@ class Plugin {
 		}
 
 		$this->helper = new Plugin_Helper( $this );
+
+		$this->apm = new APM( $this );
 	}
 
 	/**
