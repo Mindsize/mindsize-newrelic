@@ -1,11 +1,14 @@
-# Mindsize WordPress Plugin Base
+# Mindsize NewRelic
 
-A great way to spin up new WP plugins with composer.
+WordPress plugin to make New Relic data more approachable and readable.
 
-## How to create a new plugin
+## Installation
 
-From the terminal just run the following command.
+1. clone this repository into your plugins folder (by default it's `wp-content/plugins`)
+2. issue `composer install`
+3. activate the plugin
 
-```bash
-composer create-project mindsize/wp-plugin-base my-new-plugin
-```
+## Prerequisites
+
+1. Composer on the server
+2. New Relic agent installed and token configured
