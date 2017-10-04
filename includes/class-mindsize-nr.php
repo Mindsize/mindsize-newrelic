@@ -24,8 +24,6 @@ class Plugin {
 	}
 
 	public function init() {
-		if( defined( 'WP_CLI' ) && WP_CLI ) {
-			WP_CLI::add_command( 'wp-plugin-base', __NAMESPACE__ . '\\Plugin_CLI' );
-		}
+
 	}
 }
