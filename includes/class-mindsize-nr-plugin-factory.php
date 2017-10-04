@@ -18,9 +18,15 @@ class Plugin_Factory {
 		static $plugin = null;
 
 		if ( null === $plugin ) {
-			$plugin = new Plugin();
+			$plugin = new Plugin( self::is_network_active() );
 		}
 
 		return $plugin;
+	}
+
+	private static function is_network_active() {
+		$plugins = get_site_option( 'active_sitewide_plugins' );
+
+		return is_multisite() && isset( $plugins[ WP_NR_BASENAME ] );
 	}
 }

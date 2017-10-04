@@ -15,19 +15,33 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @license   http://www.gnu.org/licenses/gpl-2.0.html GNU General Public License v2.0
  */
 class Plugin {
+
+	private $admin = null;
+
+	public $network = false;
+
+	public $helper = null;
+
 	/**
 	 * Constructor.
 	 */
-	public function __construct() {
-
+	public function __construct( $network = false ) {
+		$this->network = $network;
 	}
 
 	public function init() {
 		// check for newrelic extension, show notice if it's not there and bail
-		if ( ! extension_loaded( 'newrelic' ) ) {
+		if ( ! extension_loaded( 'newrelic' ) && 0 ) {
 			add_action( 'admin_notices', array( $this, 'nr_not_installed' ) );
 			return;
 		}
+
+		if ( is_admin() ) {
+			$this->admin = new Plugin_Admin( $this );
+			$this->admin->init();
+		}
+
+		$this->helper = new Plugin_Helper( $this );
 	}
 
 	/**
