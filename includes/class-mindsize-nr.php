@@ -1,6 +1,5 @@
 <?php
 namespace Mindsize\NewRelic;
-use WP_CLI;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
