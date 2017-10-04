@@ -1,5 +1,5 @@
 <?php
-namespace Mindsize\Plugin_Base;
+namespace Mindsize\NewRelic;
 use WP_CLI_Command;
 use WP_CLI;
 
@@ -12,7 +12,7 @@ if( ! class_exists( 'WP_CLI_Command' ) ) {
 }
 
 /**
- * CLI access to the sample plugin.
+ * CLI access to the Mindsize Newrelic plugin.
  *
  * This class adds CLI capabilities to the sample plugin by extending WP CLI. For now it just includes a basic game of
  * ping pong. A version that is impossible to win.
@@ -28,7 +28,7 @@ if( ! class_exists( 'WP_CLI_Command' ) ) {
  *     $ wp wp-plugin-base ping
  *     pong
  */
-class WP_Plugin_Base_CLI extends WP_CLI_Command {
+class Plugin_CLI extends WP_CLI_Command {
 
 	public function ping() {
 		WP_CLI::line( 'pong' );
