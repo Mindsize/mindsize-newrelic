@@ -35,6 +35,7 @@ class APM {
 		$this->maybe_disable_autorum();
 		$this->maybe_include_template();
 		$this->set_user_attribute();
+		$this->set_custom_variables();
 
 		do_action( 'mindsize_nr_apm_init', $this );
 	}
@@ -124,6 +125,10 @@ class APM {
 		} else {
 			newrelic_set_user_attributes( 'not-logged-in', '', 'no-role' );
 		}
+	}
+
+	private function set_custom_variables() {
+		add_action( 'init', array( $this, 'set_custom_variables' ) );
 	}
 
 	/**
