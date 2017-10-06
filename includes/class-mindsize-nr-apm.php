@@ -40,8 +40,6 @@ class APM {
 			return;
 		}
 
-		ini_set( 'newrelic.framework', 'wordpress' );
-
 		if ( isset( $this->config['newrelic.appname'] ) && function_exists( 'newrelic_set_appname' ) ) {
 			newrelic_set_appname( $this->config['newrelic.appname'] );
 		}
