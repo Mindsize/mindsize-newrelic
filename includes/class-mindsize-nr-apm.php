@@ -15,11 +15,12 @@ class APM {
 	private $config = [];
 
 	// contexts
-	private $admin = false;
-	private $cron  = false;
-	private $ajax  = false;
-	private $cli   = false;
-	private $rest  = false;
+	private $admin    = false;
+	private $cron     = false;
+	private $ajax     = false;
+	private $cli      = false;
+	private $rest     = false;
+	private $frontend = false;
 
 	public function __construct( $plugin ) {
 		$this->plugin = $plugin;
@@ -27,10 +28,53 @@ class APM {
 
 	public function init() {
 		$this->set_context();
-		add_action( 'pre_amp_render_post', array( $this, 'disable_nr_autorum' ), 9999, 1 );
 		$this->config();
+		$this->maybe_disable_autorum();
+		$this->maybe_include_template();
 	}
 
+	/**
+	 * Ajax and Cron requests should not have the Browser extension
+	 */
+	private function maybe_disable_autorum() {
+		if ( $this->ajax || $this->cron ) {
+			disable_nr_autorum();
+		} else {
+			add_action( 'pre_amp_render_post', array( $this, 'disable_nr_autorum' ), 9999, 1 );
+		}
+	}
+
+	/**
+	 * Only include the template on the frontend
+	 */
+	private function maybe_include_template() {
+		if ( ! $this->frontend ) {
+			return;
+		}
+
+		add_filter( 'template_include', array( $this, 'set_template' ), 9999 );
+	}
+
+	/**
+	 * Set template custom parameter in current transaction
+	 *
+	 * @param $template
+	 *
+	 * @return mixed
+	 */
+	public function set_template( $template ) {
+		if ( function_exists( 'newrelic_add_custom_parameter' ) ) {
+			newrelic_add_custom_parameter( 'template', $template );
+		}
+
+		return $template;
+	}
+
+	/**
+	 * Return default configuration that can be filtered.
+	 *
+	 * @return array    default configuration values
+	 */
 	private function get_default_config() {
 		return [
 			'newrelic.appname' => $this->get_appname(),
@@ -79,7 +123,6 @@ class APM {
 		$app_name = $home_url['host'] . ( isset( $home_url['path'] ) ? $home_url['path'] : '' ) . ' ' . $context;
 
 		return apply_filters( 'mindsize_nr_app_name', $app_name );
-
 	}
 
 	/**
@@ -106,6 +149,8 @@ class APM {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$this->cli = true;
 		}
+
+		$this->frontend = ! ( $this->admin && $this->cron && $this->ajax && $this->rest && $this->cli );
 	}
 
 	/**
