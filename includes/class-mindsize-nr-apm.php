@@ -14,11 +14,19 @@ class APM {
 	private $plugin = null;
 	private $config = [];
 
+	// contexts
+	private $admin = false;
+	private $cron  = false;
+	private $ajax  = false;
+	private $cli   = false;
+	private $rest  = false;
+
 	public function __construct( $plugin ) {
 		$this->plugin = $plugin;
 	}
 
 	public function init() {
+		$this->set_context();
 		add_action( 'pre_amp_render_post', array( $this, 'disable_nr_autorum' ), 9999, 1 );
 		$this->config();
 	}
@@ -50,24 +58,90 @@ class APM {
 		do_action( 'mindsize_nr_setup_config', $this->config );
 	}
 
+	/**
+	 * Returns the app name to be used by logging. By default it will be the host as set in the home_url,
+	 * appended by the context, if it's not the front page.
+	 *
+	 * Examples:
+	 * example.com CLI
+	 * example.com REST
+	 * example.com CRON
+	 * example.com AJAX
+	 * example.com Admin
+	 * example.com
+	 *
+	 * @return string            name to be used as the app name
+	 */
 	private function get_appname() {
 		$context = $this->get_context();
 		$home_url = parse_url( home_url() );
 
-		$app_name = $home_url['host'] . ( isset( $home_url['path'] ) ? $home_url['path'] : '' ) . $context;
+		$app_name = $home_url['host'] . ( isset( $home_url['path'] ) ? $home_url['path'] : '' ) . ' ' . $context;
 
-		return apply_filters( 'wp_nr_app_name', $app_name );
+		return apply_filters( 'mindsize_nr_app_name', $app_name );
 
 	}
 
+	/**
+	 * Sets up request context so we can separate the apps in the apm by name and set additional
+	 * custom variables later.
+	 */
+	private function set_context() {
+		if ( is_admin() ) {
+			$this->admin = true;
+		}
+
+		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+			$this->cron = true;
+		}
+
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			$this->ajax = true;
+		}
+
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			$this->rest = true;
+		}
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$this->cli = true;
+		}
+	}
+
+	/**
+	 * Based on the context, return a string that gets appended to the standard app name. If
+	 * none of those match, because we're on frontend, then an empty string is returned.
+	 *
+	 * Only one of them can be returned. In order of importance:
+	 * - cli
+	 * - rest
+	 * - cron
+	 * - ajax
+	 * - admin
+	 *
+	 * @return string              name of the context based on the context
+	 */
 	private function get_context() {
-		return '';
-		// is this an API?
-		// is this CLI?
-		// is this cron?
-		// is this ajax?
-		// is this admin?
-		//
+		switch ( true ) {
+			case $this->cli;
+				return 'CLI';
+				break;
+			case $this->rest;
+				return 'REST';
+				break;
+			case $this->cron:
+				return 'CRON';
+				break;
+			case $this->ajax;
+				return 'AJAX';
+				break;
+			case $this->admin;
+				return 'Admin';
+				break;
+			default:
+				return '';
+				break;
+		}
 	}
 
 	/**
