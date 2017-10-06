@@ -139,21 +139,6 @@ class APM {
 	}
 
 	/**
-	 * Set template custom parameter in current transaction
-	 *
-	 * @param $template
-	 *
-	 * @return mixed
-	 */
-	public function set_template( $template ) {
-		if ( function_exists( 'newrelic_add_custom_parameter' ) ) {
-			newrelic_add_custom_parameter( 'template', $template );
-		}
-
-		return $template;
-	}
-
-	/**
 	 * Returns the app name to be used by logging. By default it will be the host as set in the home_url,
 	 * appended by the context, if it's not the front page.
 	 *
@@ -225,5 +210,20 @@ class APM {
 		if ( apply_filters( 'disable_post_autorum', true, $post_id ) ) {
 			newrelic_disable_autorum();
 		}
+	}
+
+	/**
+	 * Set template custom parameter in current transaction
+	 *
+	 * @param $template
+	 *
+	 * @return mixed
+	 */
+	public function set_template( $template ) {
+		if ( function_exists( 'newrelic_add_custom_parameter' ) ) {
+			newrelic_add_custom_parameter( 'template', $template );
+		}
+
+		return $template;
 	}
 }
