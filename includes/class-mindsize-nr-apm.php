@@ -26,11 +26,15 @@ class APM {
 		$this->plugin = $plugin;
 	}
 
+	/**
+	 * Let's start the plugin then!
+	 */
 	public function init() {
 		$this->set_context();
 		$this->config();
 		$this->maybe_disable_autorum();
 		$this->maybe_include_template();
+		$this->set_user_attribute();
 	}
 
 	/**
@@ -53,6 +57,23 @@ class APM {
 		}
 
 		add_filter( 'template_include', array( $this, 'set_template' ), 9999 );
+	}
+
+	/**
+	 * Set the user on new relic. The three arguments are:
+	 * - user, repurposed as the ID
+	 * - account, nothing
+	 * - product, repurposed as the role
+	 *
+	 * @see  https://docs.newrelic.com/docs/agents/php-agent/php-agent-api/newrelic_set_user_attributes
+	 */
+	private function set_user_attribute() {
+		if ( is_user_logged_in() ) {
+			$user = wp_get_current_user();
+			newrelic_set_user_attributes( $user->ID, '', array_shift( $user->roles ) );
+		} else {
+			newrelic_set_user_attributes( 'not-logged-in', '', 'no-role' );
+		}
 	}
 
 	/**
