@@ -35,6 +35,8 @@ class APM {
 		$this->maybe_disable_autorum();
 		$this->maybe_include_template();
 		$this->set_user_attribute();
+
+		do_action( 'mindsize_nr_apm_init', $this );
 	}
 
 	/**
