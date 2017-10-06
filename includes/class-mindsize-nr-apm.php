@@ -34,9 +34,8 @@ class APM {
 		$this->config();
 		$this->maybe_disable_autorum();
 		$this->maybe_include_template();
-		$this->set_custom_variables();
 
-
+		add_action( 'init', array( $this, 'set_custom_variables' ) );
 		add_action( 'parse_query', array( $this, 'set_transaction' ), 10 );
 
 		do_action( 'mindsize_nr_apm_init', $this );
@@ -110,10 +109,6 @@ class APM {
 		}
 
 		add_filter( 'template_include', array( $this, 'set_template' ), 9999 );
-	}
-
-	private function set_custom_variables() {
-		add_action( 'init', array( $this, 'set_custom_variables' ) );
 	}
 
 	/**
