@@ -37,6 +37,9 @@ class APM {
 
 		add_action( 'init', array( $this, 'set_custom_variables' ) );
 		add_action( 'parse_query', array( $this, 'set_transaction' ), 10 );
+		add_action( 'wp', array( $this, 'set_post_id' ), 10 );
+		add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), 9999, 1 );
+		add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), 9999, 1 );
 
 		do_action( 'mindsize_nr_apm_init', $this );
 	}
@@ -300,6 +303,17 @@ class APM {
 	}
 
 	/**
+	 * Set post_id custom parameter if it's single post
+	 *
+	 * @param $wp
+	 */
+	public function set_post_id( $wp ) {
+		if ( is_single() && function_exists( 'newrelic_add_custom_parameter' ) ) {
+			newrelic_add_custom_parameter( 'post_id', apply_filters( 'mindsize_nr_post_id', get_the_ID() ) );
+		}
+	}
+
+	/**
 	 * Adds a custom parameter through `newrelic_add_custom_parameter`
 	 * Prefixes the $key with 'msnr_' to avoid collisions with NRQL reserved words
 	 *
@@ -317,5 +331,37 @@ class APM {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Track time before starting async job
+	 *
+	 * @param $hook
+	 */
+	public function async_before_job_track_time( $hook ) {
+		if ( false === $this->async_tasks ) {
+			$this->async_tasks = array();
+		}
+
+		$this->async_tasks[ $hook ] = array(
+			'start_time' => microtime( true ),
+		);
+	}
+
+	/**
+	 * Set time taken for async task into custom parameter
+	 *
+	 * @param $hook
+	 */
+	public function async_after_job_set_attribute( $hook ) {
+		if ( is_array( $this->async_tasks ) && ! empty( $this->async_tasks[ $hook ] ) ) {
+			$this->async_tasks[ $hook ]['end_time'] = microtime( true );
+
+			$time_diff = $this->async_tasks[ $hook ]['start_time'] - $this->async_tasks[ $hook ]['end_time'];
+
+			if ( function_exists( 'newrelic_add_custom_parameter' ) ) {
+				newrelic_add_custom_parameter( 'wp_async_task-' . $hook, $time_diff );
+			}
+		}
 	}
 }
