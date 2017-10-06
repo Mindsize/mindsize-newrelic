@@ -215,6 +215,11 @@ class APM {
 		return $template;
 	}
 
+	/**
+	 * Custom variables set up automatically for all transactions:
+	 * - user id | 'not-logged-in'
+	 * - theme used
+	 */
 	public function set_custom_variables() {
 		/**
 		 * Set the user
