@@ -127,6 +127,18 @@ class APM {
 	}
 
 	/**
+	 * Return default configuration that can be filtered.
+	 *
+	 * @return array    default configuration values
+	 */
+	private function get_default_config() {
+		return [
+			'newrelic.appname' => $this->get_appname(),
+			'newrelic.capture_params' => $this->plugin->helper->get_capture_url(),
+		];
+	}
+
+	/**
 	 * Set template custom parameter in current transaction
 	 *
 	 * @param $template
@@ -139,18 +151,6 @@ class APM {
 		}
 
 		return $template;
-	}
-
-	/**
-	 * Return default configuration that can be filtered.
-	 *
-	 * @return array    default configuration values
-	 */
-	private function get_default_config() {
-		return [
-			'newrelic.appname' => $this->get_appname(),
-			'newrelic.capture_params' => $this->plugin->helper->get_capture_url(),
-		];
 	}
 
 	/**
