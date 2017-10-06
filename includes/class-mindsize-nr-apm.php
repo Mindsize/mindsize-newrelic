@@ -40,6 +40,34 @@ class APM {
 	}
 
 	/**
+	 * Sets up request context so we can separate the apps in the apm by name and set additional
+	 * custom variables later.
+	 */
+	private function set_context() {
+		if ( is_admin() ) {
+			$this->admin = true;
+		}
+
+		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+			$this->cron = true;
+		}
+
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			$this->ajax = true;
+		}
+
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			$this->rest = true;
+		}
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$this->cli = true;
+		}
+
+		$this->frontend = ! ( $this->admin && $this->cron && $this->ajax && $this->rest && $this->cli );
+	}
+
+	/**
 	 * Ajax and Cron requests should not have the Browser extension
 	 */
 	private function maybe_disable_autorum() {
@@ -146,34 +174,6 @@ class APM {
 		$app_name = $home_url['host'] . ( isset( $home_url['path'] ) ? $home_url['path'] : '' ) . ' ' . $context;
 
 		return apply_filters( 'mindsize_nr_app_name', $app_name );
-	}
-
-	/**
-	 * Sets up request context so we can separate the apps in the apm by name and set additional
-	 * custom variables later.
-	 */
-	private function set_context() {
-		if ( is_admin() ) {
-			$this->admin = true;
-		}
-
-		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
-			$this->cron = true;
-		}
-
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			$this->ajax = true;
-		}
-
-		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-			$this->rest = true;
-		}
-
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			$this->cli = true;
-		}
-
-		$this->frontend = ! ( $this->admin && $this->cron && $this->ajax && $this->rest && $this->cli );
 	}
 
 	/**
