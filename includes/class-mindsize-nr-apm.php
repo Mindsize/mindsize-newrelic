@@ -34,8 +34,10 @@ class APM {
 		$this->config();
 		$this->maybe_disable_autorum();
 		$this->maybe_include_template();
-		$this->set_user_attribute();
 		$this->set_custom_variables();
+
+
+		add_action( 'parse_query', array( $this, 'set_transaction' ), 10 );
 
 		do_action( 'mindsize_nr_apm_init', $this );
 	}
@@ -108,23 +110,6 @@ class APM {
 		}
 
 		add_filter( 'template_include', array( $this, 'set_template' ), 9999 );
-	}
-
-	/**
-	 * Set the user on new relic. The three arguments are:
-	 * - user, repurposed as the ID
-	 * - account, nothing
-	 * - product, repurposed as the role
-	 *
-	 * @see  https://docs.newrelic.com/docs/agents/php-agent/php-agent-api/newrelic_set_user_attributes
-	 */
-	private function set_user_attribute() {
-		if ( is_user_logged_in() ) {
-			$user = wp_get_current_user();
-			newrelic_set_user_attributes( $user->ID, '', array_shift( $user->roles ) );
-		} else {
-			newrelic_set_user_attributes( 'not-logged-in', '', 'no-role' );
-		}
 	}
 
 	private function set_custom_variables() {
@@ -230,5 +215,112 @@ class APM {
 		}
 
 		return $template;
+	}
+
+	public function set_custom_variables() {
+		/**
+		 * Set the user
+		 */
+		if ( is_user_logged_in() ) {
+			$user = wp_get_current_user();
+			newrelic_set_user_attributes( $user->ID, '', array_shift( $user->roles ) );
+		} else {
+			newrelic_set_user_attributes( 'not-logged-in', '', 'no-role' );
+		}
+
+		/**
+		 * Set the theme used
+		 */
+		$theme = wp_get_theme();
+		newrelic_add_custom_parameter( 'Theme Name', $theme->get( 'Name' ) );
+		newrelic_add_custom_parameter( 'Theme files', $theme->get_stylesheet );
+	}
+
+	/**
+	 * Set current transaction name as per the main WP_Query
+	 *
+	 * @param $query
+	 */
+	public function set_transaction( $query ) {
+
+		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
+			return;
+		}
+
+		// set transaction
+		$transaction = false;
+
+		if ( $query->is_main_query() ) {
+			if ( is_front_page() && is_home() ) {
+				$transaction = 'Default Home Page';
+			} elseif ( is_front_page() ) {
+				$transaction = 'Front Page';
+			} elseif ( is_home() ) {
+				$transaction = 'Blog Page';
+			} elseif ( is_network_admin() ) {
+				$transaction = 'Network Dashboard';
+			} elseif ( is_admin() ) {
+				$transaction = 'Dashboard';
+			} elseif ( is_single() ) {
+				$post_type = ( ! empty( $query->query['post_type'] ) ) ? $query->query['post_type'] : 'Post';
+				$transaction = "Single - {$post_type}";
+			} elseif ( is_page() ) {
+				if ( isset( $query->query['pagename'] ) ) {
+					$this->add_custom_parameter( 'page', $query->query['pagename'] );
+				}
+				$transaction = "Page";
+			} elseif ( is_date() ) {
+				$transaction = 'Date Archive';
+			} elseif ( is_search() ) {
+				if ( isset( $query->query['s'] ) ) {
+					$this->add_custom_parameter( 'search', $query->query['s'] );
+				}
+				$transaction = 'Search Page';
+			} elseif ( is_feed() ) {
+				$transaction = 'Feed';
+			} elseif ( is_post_type_archive() ) {
+				$post_type = post_type_archive_title( '', false );
+				$transaction = "Archive - {$post_type}";
+			} elseif ( is_category() ) {
+				if ( isset( $query->query['category_name'] ) ) {
+					$this->add_custom_parameter( 'cat_slug', $query->query['category_name'] );
+				}
+				$transaction = "Category";
+			} elseif ( is_tag() ) {
+				if ( isset( $query->query['tag'] ) ) {
+					$this->add_custom_parameter( 'tag_slug', $query->query['tag'] );
+				}
+				$transaction = "Tag";
+			} elseif ( is_tax() ) {
+				$tax    = key( $query->tax_query->queried_terms );
+				$term   = implode( ' | ', $query->tax_query->queried_terms[ $tax ]['terms'] );
+				$this->add_custom_parameter( 'term_slug', $term );
+				$transaction = "Tax - {$tax}";
+			}
+
+			if ( ! empty( $transaction ) ) {
+				newrelic_name_transaction( apply_filters( 'wp_nr_transaction_name', $transaction ) );
+			}
+		}
+	}
+
+	/**
+	 * Adds a custom parameter through `newrelic_add_custom_parameter`
+	 * Prefixes the $key with 'msnr_' to avoid collisions with NRQL reserved words
+	 *
+	 * @see https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-custom-param
+	 *
+	 * @param $key      string  Custom parameter key
+	 * @param $value    string  Custom parameter value
+	 * @return bool
+	 */
+	public function add_custom_parameter( $key, $value ) {
+		if ( function_exists( 'newrelic_add_custom_parameter' ) ) {
+			//prefixing with msnr_ to avoid collisions with reserved works in NRQL
+			$key = 'msnr_' . $key;
+			return newrelic_add_custom_parameter( $key, apply_filters( 'mindsize_nr_add_custom_parameter', $value, $key ) );
+		}
+
+		return false;
 	}
 }
