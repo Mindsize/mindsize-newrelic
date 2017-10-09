@@ -37,6 +37,8 @@ class Plugin {
 			return;
 		}
 
+		error_log( 'nr loaded');
+
 		if ( is_admin() ) {
 			$this->admin = new Plugin_Admin( $this );
 			$this->admin->init();
