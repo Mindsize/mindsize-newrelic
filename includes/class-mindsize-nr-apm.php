@@ -102,7 +102,7 @@ class APM {
 	 */
 	private function maybe_disable_autorum() {
 		if ( $this->ajax || $this->cron ) {
-			disable_nr_autorum();
+			$this->disable_nr_autorum();
 		} else {
 			add_action( 'pre_amp_render_post', array( $this, 'disable_nr_autorum' ), 9999, 1 );
 		}
