@@ -33,11 +33,8 @@ class Plugin {
 		// check for newrelic extension, show notice if it's not there and bail
 		if ( ! extension_loaded( 'newrelic' ) ) {
 			add_action( 'admin_notices', array( $this, 'nr_not_installed' ) );
-			error_log( 'nr not loaded');
 			return;
 		}
-
-		error_log( 'nr loaded');
 
 		if ( is_admin() ) {
 			$this->admin = new Plugin_Admin( $this );
