@@ -42,6 +42,11 @@ class APM {
 		add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), 9999, 1 );
 
 		do_action( 'mindsize_nr_apm_init', $this );
+
+		// if woocommerce is present
+		if ( function_exists( 'wc' ) ) {
+			add_filter( 'mindsize_nr_transaction_name', array( $this, 'woocommerce_transaction_names' ), 10, 2 );
+		}
 	}
 
 	/**
@@ -251,9 +256,9 @@ class APM {
 		}
 
 		// set transaction
-		$transaction = false;
+		$transaction = apply_filters( 'mindsize_nr_transaction_name', false, $query );
 
-		if ( $query->is_main_query() ) {
+		if ( false === $transaction && $query->is_main_query() ) {
 			if ( is_front_page() && is_home() ) {
 				$transaction = 'Default Home Page';
 			} elseif ( is_front_page() ) {
@@ -300,10 +305,10 @@ class APM {
 				$this->add_custom_parameter( 'term_slug', $term );
 				$transaction = "Tax - {$tax}";
 			}
+		}
 
-			if ( ! empty( $transaction ) ) {
-				newrelic_name_transaction( apply_filters( 'wp_nr_transaction_name', $transaction ) );
-			}
+		if ( ! empty( $transaction ) ) {
+			newrelic_name_transaction( apply_filters( 'wp_nr_transaction_name', $transaction ) );
 		}
 	}
 
@@ -368,5 +373,45 @@ class APM {
 				newrelic_add_custom_parameter( 'wp_async_task-' . $hook, $time_diff );
 			}
 		}
+	}
+
+	/**
+	 * Method that hooks into the {@see $this->set_transaction} method to overwrite the transaction name and
+	 * maybe set a custom parameter in case of the shop.
+	 *
+	 * @param [type] $transaction
+	 * @return void
+	 */
+	public function woocommerce_transaction_names( $transaction, $query ) {
+
+		if ( is_cart() ) {
+			$transaction = 'Cart';
+		} elseif ( is_checkout_pay_page() ) {
+			$transaction = 'Checkout - Pay Page';
+		} elseif ( is_checkout() ) {
+			$transaction = 'Checkout';
+		} elseif ( is_shop() ) {
+			$transaction = 'Shop';
+			$page = ( isset( $query->query['page'] ) ) ? $query->query['page'] : false;
+
+			if ( $page ) {
+				$this->add_custom_parameter( 'page', $page );
+			}
+		} elseif ( is_account_page() ) {
+			$transaction = 'My Account page';
+
+			if ( is_wc_endpoint_url() ) {
+				$wc_endpoints = WC()->query->get_query_vars();
+
+				foreach ( $wc_endpoints as $key => $value ) {
+					if ( isset( $query->query_vars[ $key ] ) ) {
+						$this->add_custom_parameter( 'wc_endpoint', $query->query_vars[ $key ] );
+						break;
+					}
+				}
+			}
+		}
+
+		return $transaction;
 	}
 }
