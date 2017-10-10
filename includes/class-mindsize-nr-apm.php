@@ -151,7 +151,7 @@ class APM {
 
 		$app_name = $home_url['host'] . ( isset( $home_url['path'] ) ? $home_url['path'] : '' ) . ' ' . $context;
 
-		return apply_filters( 'mindsize_nr_app_name', $app_name );
+		return apply_filters( 'mindsize_nr_app_name', $app_name, $context );
 	}
 
 	/**
