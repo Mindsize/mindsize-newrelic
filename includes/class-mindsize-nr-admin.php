@@ -5,7 +5,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-
 class Plugin_Admin {
 	private $plugin = null;
 
@@ -155,6 +154,14 @@ class Plugin_Admin {
 		return $settings;
 	}
 
+	/**
+	 * Capture URL field in the options page.
+	 *
+	 * @see  self::dashboard_page()
+	 *
+	 * @param  boolean    $is_capture   whether the option is enabled or not
+	 * @return string                   outputs the row
+	 */
 	private function capture_url_field( $is_capture ) {
 		?>
 		<tr>
@@ -168,6 +175,15 @@ class Plugin_Admin {
 		</tr>
 		<?php
 	}
+
+	/**
+	 * Separate environs field in the options page.
+	 *
+	 * @see  self::dashboard_page()
+	 *
+	 * @param  boolean    $separate_environs   whether the option is enabled or not
+	 * @return string                          outputs the row
+	 */
 	private function separate_environs_field( $separate_environs ) {
 		?>
 		<tr>
@@ -182,6 +198,14 @@ class Plugin_Admin {
 		<?php
 	}
 
+	/**
+	 * Enable browser tracking field in the options page.
+	 *
+	 * @see  self::dashboard_page()
+	 *
+	 * @param  boolean    $enable_browser   whether the option is enabled or not
+	 * @return string                       outputs the row
+	 */
 	private function enable_browser_field( $enable_browser ) {
 		?>
 		<tr>
@@ -196,6 +220,14 @@ class Plugin_Admin {
 		<?php
 	}
 
+	/**
+	 * Browser tracking settings field in the options page.
+	 *
+	 * @see  self::dashboard_page()
+	 *
+	 * @param  array    $browser_settings   saved browser settings (or empty)
+	 * @return string                       outputs the row
+	 */
 	private function browser_settings_field( $browser_settings ) {
 		?>
 		<tr>
@@ -235,6 +267,13 @@ class Plugin_Admin {
 		<?php
 	}
 
+	/**
+	 * Reset browser settings field in the options page.
+	 *
+	 * @see  self::dashboard_page()
+	 *
+	 * @return string                       outputs the row
+	 */
 	private function reset_browser_settings_field() {
 		?>
 		<tr>
