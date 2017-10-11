@@ -6,13 +6,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Plugin Name:       Mindsize Newrelic
- * Description:       WordPress and WooCommerce specific New Relic plugin by Mindsize.
- * Author:            Mindsize
- * Author URI:        https://mindsize.me
- * Version:           1.0.0
- * Requires at least: 4.4
- * Tested up to:      4.8
+ * Plugin Name:          Mindsize Newrelic
+ * Description:          WordPress and WooCommerce specific New Relic plugin by Mindsize.
+ * Author:               Mindsize
+ * Author URI:           https://mindsize.me
+ * Version:              1.0.0
+ * Requires at least:    4.4
+ * Tested up to:         4.8
+ * WC requires at least: 2.6.0
+ * WC tested up to:      3.2.0
  */
 
 define( 'MINDSIZE_NR_VERSION', '1.0.0' );
