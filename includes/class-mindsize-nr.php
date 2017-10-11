@@ -41,6 +41,7 @@ class Plugin {
 			$this->admin->init();
 		}
 
+
 		$this->helper = new Plugin_Helper( $this );
 
 		$this->apm = new APM( $this );
