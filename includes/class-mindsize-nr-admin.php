@@ -106,15 +106,9 @@ class Plugin_Admin {
 				wp_nonce_field( 'mindsize_nr_settings', 'mindsize_nr_settings' );
 				?>
 				<table class="form-table">
-					<tr>
-						<th scope="row">
-							<label for="mindsize_nr_capture_url"><?php esc_html_e( 'Capture URL Parameters', MINDSIZE_NR_SLUG ); ?></label>
-						</th>
-						<td>
-							<input type="checkbox" name="mindsize_nr_capture_url" id="mindsize_nr_capture_url" <?php checked( true, $is_capture ) ?>>
-							<p class="description"><?php esc_html_e( 'Enable this to record parameter passed to PHP script via the URL (everything after the "?" in the URL).', MINDSIZE_NR_SLUG ) ?></p>
-						</td>
-					</tr>
+					<?php
+					$this->capture_url_field( $is_capture );
+					?>
 
 					<tr>
 						<th scope="row">
@@ -216,5 +210,19 @@ class Plugin_Admin {
 		}// end foreach
 
 		return $settings;
+	}
+
+	private function capture_url_field( $is_capture ) {
+		?>
+		<tr>
+			<th scope="row">
+				<label for="mindsize_nr_capture_url"><?php esc_html_e( 'Capture URL Parameters', MINDSIZE_NR_SLUG ); ?></label>
+			</th>
+			<td>
+				<input type="checkbox" name="mindsize_nr_capture_url" id="mindsize_nr_capture_url" <?php checked( true, $is_capture ) ?>>
+				<p class="description"><?php esc_html_e( 'Enable this to record parameter passed to PHP script via the URL (everything after the "?" in the URL).', MINDSIZE_NR_SLUG ) ?></p>
+			</td>
+		</tr>
+		<?php
 	}
 }
