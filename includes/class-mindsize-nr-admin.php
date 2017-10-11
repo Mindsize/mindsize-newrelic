@@ -114,17 +114,9 @@ class Plugin_Admin {
 					$this->enable_browser_field( $enable_browser );
 
 					$this->browser_settings_field( $browser_settings );
-					?>
 
-					<tr>
-						<th scope="row">
-							<label for="mindsize_nr_reset_browser_settings"><?php esc_html_e( 'Reset browser tracking code settings', MINDSIZE_NR_SLUG ); ?></label>
-						</th>
-						<td>
-							<input type="checkbox" name="mindsize_nr_reset_browser_settings" id="mindsize_nr_reset_browser_settings">
-							<p class="description"><?php esc_html_e( 'If this is ticked, the browser tracking Javascript settings will be reset.', MINDSIZE_NR_SLUG ) ?></p>
-						</td>
-					</tr>
+					$this->reset_browser_settings_field();
+					?>
 				</table>
 				<?php
 				submit_button( esc_html__( 'Save Changes', MINDSIZE_NR_SLUG ), 'submit primary' );
@@ -238,6 +230,20 @@ class Plugin_Admin {
 					echo '<p>Setting is either not an array, or empty</p>';
 				}
 				?>
+			</td>
+		</tr>
+		<?php
+	}
+
+	private function reset_browser_settings_field() {
+		?>
+		<tr>
+			<th scope="row">
+				<label for="mindsize_nr_reset_browser_settings"><?php esc_html_e( 'Reset browser tracking code settings', MINDSIZE_NR_SLUG ); ?></label>
+			</th>
+			<td>
+				<input type="checkbox" name="mindsize_nr_reset_browser_settings" id="mindsize_nr_reset_browser_settings">
+				<p class="description"><?php esc_html_e( 'If this is ticked, the browser tracking Javascript settings will be reset.', MINDSIZE_NR_SLUG ) ?></p>
 			</td>
 		</tr>
 		<?php
