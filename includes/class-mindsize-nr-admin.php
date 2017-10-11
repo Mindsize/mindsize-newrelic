@@ -112,41 +112,9 @@ class Plugin_Admin {
 					$this->separate_environs_field( $separate_environs );
 
 					$this->enable_browser_field( $enable_browser );
+
+					$this->browser_settings_field( $browser_settings );
 					?>
-					<tr>
-						<th scope="row">
-							<label for="mindsize_nr_browser_settings"><?php esc_html_e( 'Browser Tracking Javascript', MINDSIZE_NR_SLUG ); ?></label>
-						</th>
-						<td>
-							<textarea name="mindsize_nr_browser_settings" id="mindsize_nr_browser_settings" cols="120" rows="20"></textarea>
-							<p class="description"><?php esc_html_e( 'Paste your tracking code here and save.', MINDSIZE_NR_SLUG ) ?></p>
-							<h2>Parsed settings</h2>
-							<?php
-							// and output the settings
-							if ( is_array( $browser_settings ) ) {
-								?>
-								<table>
-									<thead>
-										<tr>
-											<th>key</th>
-											<th>value</th>
-										</tr>
-									</thead>
-									<tbody>
-										<?php
-										foreach ($browser_settings as $key => $value) {
-										 	printf( '<tr><td>%s</td><td>%s</td></tr>', $key, $value );
-										}
-										?>
-									</tbody>
-								</table>
-								<?php
-							} else {
-								echo '<p>Setting is either not an array, or empty</p>';
-							}
-							?>
-						</td>
-					</tr>
 
 					<tr>
 						<th scope="row">
@@ -231,6 +199,45 @@ class Plugin_Admin {
 			<td>
 				<input type="checkbox" name="mindsize_nr_enable_browser" id="mindsize_nr_enable_browser" <?php checked( true, $enable_browser ) ?>>
 				<p class="description"><?php esc_html_e( 'If this is ticked, the browser tracking Javascript snippet will be output. You need to paste your browser tracking code into the box as well.', MINDSIZE_NR_SLUG ) ?></p>
+			</td>
+		</tr>
+		<?php
+	}
+
+	private function browser_settings_field( $browser_settings ) {
+		?>
+		<tr>
+			<th scope="row">
+				<label for="mindsize_nr_browser_settings"><?php esc_html_e( 'Browser Tracking Javascript', MINDSIZE_NR_SLUG ); ?></label>
+			</th>
+			<td>
+				<textarea name="mindsize_nr_browser_settings" id="mindsize_nr_browser_settings" cols="120" rows="20"></textarea>
+				<p class="description"><?php esc_html_e( 'Paste your tracking code here and save.', MINDSIZE_NR_SLUG ) ?></p>
+				<h2>Parsed settings</h2>
+				<?php
+				// and output the settings
+				if ( is_array( $browser_settings ) ) {
+					?>
+					<table>
+						<thead>
+							<tr>
+								<th>key</th>
+								<th>value</th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
+							foreach ( $browser_settings as $key => $value ) {
+								printf( '<tr><td>%s</td><td>%s</td></tr>', $key, $value );
+							}
+							?>
+						</tbody>
+					</table>
+					<?php
+				} else {
+					echo '<p>Setting is either not an array, or empty</p>';
+				}
+				?>
 			</td>
 		</tr>
 		<?php
