@@ -108,18 +108,9 @@ class Plugin_Admin {
 				<table class="form-table">
 					<?php
 					$this->capture_url_field( $is_capture );
+
+					$this->separate_environs_field( $separate_environs );
 					?>
-
-					<tr>
-						<th scope="row">
-							<label for="mindsize_nr_separate_environs"><?php esc_html_e( 'Separete Enviroments', MINDSIZE_NR_SLUG ); ?></label>
-						</th>
-						<td>
-							<input type="checkbox" name="mindsize_nr_separate_environs" id="mindsize_nr_separate_environs" <?php checked( true, $separate_environs ) ?>>
-							<p class="description"><?php esc_html_e( 'Enable this to see requests broken down by request type: Admin / Frontend / API / CRON / AJAX / CLI.', MINDSIZE_NR_SLUG ) ?></p>
-						</td>
-					</tr>
-
 					<tr>
 						<th scope="row">
 							<label for="mindsize_nr_enable_browser"><?php esc_html_e( 'Enable browser tracking', MINDSIZE_NR_SLUG ); ?></label>
@@ -221,6 +212,19 @@ class Plugin_Admin {
 			<td>
 				<input type="checkbox" name="mindsize_nr_capture_url" id="mindsize_nr_capture_url" <?php checked( true, $is_capture ) ?>>
 				<p class="description"><?php esc_html_e( 'Enable this to record parameter passed to PHP script via the URL (everything after the "?" in the URL).', MINDSIZE_NR_SLUG ) ?></p>
+			</td>
+		</tr>
+		<?php
+	}
+	private function separate_environs_field( $separate_environs ) {
+		?>
+		<tr>
+			<th scope="row">
+				<label for="mindsize_nr_separate_environs"><?php esc_html_e( 'Separete Enviroments', MINDSIZE_NR_SLUG ); ?></label>
+			</th>
+			<td>
+				<input type="checkbox" name="mindsize_nr_separate_environs" id="mindsize_nr_separate_environs" <?php checked( true, $separate_environs ) ?>>
+				<p class="description"><?php esc_html_e( 'Enable this to see requests broken down by request type: Admin / Frontend / API / CRON / AJAX / CLI.', MINDSIZE_NR_SLUG ) ?></p>
 			</td>
 		</tr>
 		<?php
