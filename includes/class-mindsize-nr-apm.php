@@ -195,7 +195,7 @@ class APM {
 	 *
 	 * @param $post_id
 	 */
-	public function disable_nr_autorum( $post_id ) {
+	public function disable_nr_autorum( $post_id = null ) {
 		if ( ! function_exists( 'newrelic_disable_autorum' ) ) {
 			return;
 		}
