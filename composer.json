@@ -1,6 +1,6 @@
 {
-  "name": "mindsize/wp-plugin-base",
-  "description": "This is a sample plugin that was created with mindsize/wp-plugin-base.",
+  "name": "mindsize/mindsize-newrelic",
+  "description": "Better WordPress data for New Relic, with WooCommerce support.",
   "type": "wordpress-plugin",
   "license": "GPL-2.0",
   "require": {

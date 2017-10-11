@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Plugin Name:          Mindsize Newrelic
- * Description:          WordPress and WooCommerce specific New Relic plugin by Mindsize.
+ * Description:          Better WordPress data for New Relic, with WooCommerce support.
  * Author:               Mindsize
  * Author URI:           https://mindsize.me
  * Version:              1.0.0
