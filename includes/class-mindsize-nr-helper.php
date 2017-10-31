@@ -39,6 +39,22 @@ class Plugin_Helper {
 		$this->set_setting( 'mindsize_nr_separate_environs', $value );
 	}
 
+	public function get_enable_browser() {
+		return $this->get_setting( 'mindsize_nr_enable_browser' );
+	}
+
+	public function set_enable_browser( $value ) {
+		$this->set_setting( 'mindsize_nr_enable_browser', $value );
+	}
+
+	public function get_browser_settings() {
+		return $this->get_setting( 'mindsize_nr_browser_settings' );
+	}
+
+	public function set_browser_settings( $value ) {
+		$this->set_setting( 'mindsize_nr_browser_settings', $value );
+	}
+
 	/**
 	 * Get single setting
 	 *
@@ -48,9 +64,9 @@ class Plugin_Helper {
 	 */
 	private function get_setting( $setting ) {
 		if ( $this->plugin->network ) {
-			$return = (bool) get_site_option( $setting, false );
+			$return = get_site_option( $setting, false );
 		} else {
-			$return = (bool) get_option( $setting, false );
+			$return = get_option( $setting, false );
 		}
 
 		return $return;

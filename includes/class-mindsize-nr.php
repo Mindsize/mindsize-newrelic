@@ -45,6 +45,9 @@ class Plugin {
 
 		$this->apm = new APM( $this );
 		$this->apm->init();
+
+		$this->browser = new Browser( $this );
+		$this->browser->init();
 	}
 
 	/**
