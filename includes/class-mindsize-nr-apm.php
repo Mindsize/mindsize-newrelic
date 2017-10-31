@@ -241,7 +241,7 @@ class APM {
 		 */
 		$theme = wp_get_theme();
 		newrelic_add_custom_parameter( 'Theme Name', $theme->get( 'Name' ) );
-		newrelic_add_custom_parameter( 'Theme files', $theme->get_stylesheet );
+		newrelic_add_custom_parameter( 'Theme files', $theme->get_stylesheet() );
 	}
 
 	/**
