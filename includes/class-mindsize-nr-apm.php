@@ -43,6 +43,8 @@ class APM {
 
 		do_action( 'mindsize_nr_apm_init', $this );
 
+		add_filter( 'mindsize_nr_transaction_name', array( $this, 'name_ajax_cli_cron_transactions' ), 10, 3 );
+
 		// if woocommerce is present
 		if ( function_exists( 'wc' ) ) {
 			add_filter( 'mindsize_nr_transaction_name', array( $this, 'woocommerce_transaction_names' ), 10, 3 );
@@ -376,6 +378,28 @@ class APM {
 			if ( function_exists( 'newrelic_add_custom_parameter' ) ) {
 				newrelic_add_custom_parameter( 'wp_async_task-' . $hook, $time_diff );
 			}
+		}
+	}
+
+	public function name_ajax_cli_cron_transactions( $transaction, $query, $apm ) {
+		if ( false !== $transaction || ! in_array( $apm->get_context(), array( 'CLI', 'AJAX', 'CRON', 'REST' ) ) ) {
+			return $transaction;
+		}
+
+		if ( 'AJAX' === $apm->get_context() ) {
+			return isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : false;
+		}
+
+		if ( 'REST' === $apm->get_context() ) {
+			return false; // rest route
+		}
+
+		if ( 'CRON' === $apm->get_context() ) {
+			return false; // current hook firing
+		}
+
+		if ( 'CLI' === $apm->get_context() ) {
+			return false; // current command
 		}
 	}
 
