@@ -256,7 +256,7 @@ class APM {
 		}
 
 		// set transaction
-		$transaction = apply_filters( 'mindsize_nr_transaction_name', false, $query );
+		$transaction = apply_filters( 'mindsize_nr_transaction_name', false, $query, $this );
 
 		if ( false === $transaction && $query->is_main_query() ) {
 			if ( is_front_page() && is_home() ) {
