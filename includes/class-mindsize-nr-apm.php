@@ -164,6 +164,7 @@ class APM {
 	 * - cron
 	 * - ajax
 	 * - admin
+	 * - frontend
 	 *
 	 * @return string              name of the context based on the context
 	 */
@@ -183,6 +184,9 @@ class APM {
 				break;
 			case $this->admin;
 				return 'Admin';
+				break;
+			case $this->frontend;
+				return 'Frontend';
 				break;
 			default:
 				return '';
