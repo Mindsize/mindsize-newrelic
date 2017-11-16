@@ -45,7 +45,7 @@ class APM {
 
 		// if woocommerce is present
 		if ( function_exists( 'wc' ) ) {
-			add_filter( 'mindsize_nr_transaction_name', array( $this, 'woocommerce_transaction_names' ), 10, 2 );
+			add_filter( 'mindsize_nr_transaction_name', array( $this, 'woocommerce_transaction_names' ), 10, 3 );
 		}
 	}
 
