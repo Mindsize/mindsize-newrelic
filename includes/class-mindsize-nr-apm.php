@@ -384,6 +384,10 @@ class APM {
 	 */
 	public function woocommerce_transaction_names( $transaction, $query ) {
 
+		if ( false !== $transaction ) {
+			return $transaction;
+		}
+
 		if ( is_cart() ) {
 			$transaction = 'Cart';
 		} elseif ( is_checkout_pay_page() ) {
