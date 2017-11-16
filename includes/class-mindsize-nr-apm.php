@@ -386,7 +386,7 @@ class APM {
 	 * @param [type] $transaction
 	 * @return void
 	 */
-	public function woocommerce_transaction_names( $transaction, $query ) {
+	public function woocommerce_transaction_names( $transaction, $query, $apm ) {
 
 		if ( false !== $transaction ) {
 			return $transaction;
