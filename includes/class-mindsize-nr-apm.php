@@ -391,7 +391,7 @@ class APM {
 		}
 
 		if ( 'REST' === $apm->get_context() ) {
-			return false; // rest route
+			return sprintf( '%s %s', $_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'] );
 		}
 
 		if ( 'CRON' === $apm->get_context() ) {
