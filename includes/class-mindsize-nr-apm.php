@@ -30,24 +30,24 @@ class APM {
 	 * Let's start the plugin then!
 	 */
 	public function init() {
-		$this->set_context();
-		$this->config();
+		$this->maybe_set_context();
+
 		$this->maybe_disable_autorum();
 		$this->maybe_include_template();
 
 		add_action( 'init', array( $this, 'set_custom_variables' ) );
-		add_action( 'parse_query', array( $this, 'set_transaction' ), 10 );
+		add_action( 'parse_query', array( $this, 'set_transaction' ), 9999 );
 		add_action( 'wp', array( $this, 'set_post_id' ), 10 );
 		add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), 9999, 1 );
 		add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), 9999, 1 );
 
 		do_action( 'mindsize_nr_apm_init', $this );
 
-		add_filter( 'mindsize_nr_transaction_name', array( $this, 'name_ajax_cli_cron_transactions' ), 10, 3 );
+		add_filter( 'mindsize_nr_transaction_name', array( $this, 'name_ajax_cli_cron_transactions' ), 10, 2 );
 
 		// if woocommerce is present
 		if ( function_exists( 'wc' ) ) {
-			add_filter( 'mindsize_nr_transaction_name', array( $this, 'woocommerce_transaction_names' ), 10, 3 );
+			add_filter( 'mindsize_nr_transaction_name', array( $this, 'woocommerce_transaction_names' ), 10, 2 );
 		}
 	}
 
@@ -55,28 +55,92 @@ class APM {
 	 * Sets up request context so we can separate the apps in the apm by name and set additional
 	 * custom variables later.
 	 */
-	private function set_context() {
-		if ( is_admin() ) {
-			$this->admin = true;
+	private function maybe_set_context() {
+		/**
+		 * Admin, CLI, CRON are available at plugins_loaded.
+		 */
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$this->cli = true;
+			$this->config();
+			return;
 		}
 
 		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
 			$this->cron = true;
+			$this->config();
+			return;
 		}
 
+		/**
+		 * Admin is less important than AJAX, so we'll set it here (because it's available),
+		 * but we're not going to config or break because AJAX is only available later.
+		 */
+		if ( is_admin() ) {
+			$this->admin = 'true';
+		}
+
+		/**
+		 * If we've gotten here, we're not in CRON, CLI, so let's schedule the next ones:
+		 * - wp_default_styles: check for AJAX
+		 * - parse_query: check for REST
+		 * - parse_query: to check for front end, because rest_api_init is not available there
+		 *
+		 * Why can't we use parse_query for AJAX check? Because parse_query doesn't run for AJAX
+		 * requests...
+		 *
+		 * And then if any of those fire, unhook the ones following it
+		 */
+		add_action( 'wp_default_styles', array( $this, 'maybe_set_context_to_ajax' ) );
+		add_action( 'parse_query',       array( $this, 'maybe_set_context_to_rest_or_fe' ) );
+	}
+
+	/**
+	 * Hooked into {@see wp_default_styles}, this will determine whether we're in an AJAX context.
+	 * If we are, we're unhooking the REST check.
+	 *
+	 * @return void
+	 */
+	public function maybe_set_context_to_ajax() {
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			$this->ajax = true;
-		}
+			$this->config();
 
+			/**
+			 * Because we've determined we're in AJAX context, we're gonna set the app to AJAX, and then
+			 * remove the check for REST.
+			 */
+			remove_action( 'parse_query',       array( $this, 'maybe_set_context_to_rest_or_fe' ) );
+		}
+	}
+
+	/**
+	 * Hooked into {@see parse_query} action, this will test whether we're in a REST or front end
+	 * context.
+	 *
+	 * @return void
+	 */
+	public function maybe_set_context_to_rest_or_fe() {
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			$this->rest = true;
+
+			$this->config();
+
+			// early terminate
+			return;
 		}
 
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			$this->cli = true;
-		}
+		$this->frontend = ! ( $this->admin || $this->cron || $this->ajax || $this->rest || $this->cli );
 
-		$this->frontend = ! ( $this->admin && $this->cron && $this->ajax && $this->rest && $this->cli );
+		/**
+		 * Since this is the last point we can check where we are, there are three possibilities here:
+		 * - we're in REST, as determined a few lines above
+		 * - we're in AJAX, as determined a hook before
+		 * - we're in Admin, as determined several hooks before, but had to wait for AJAX
+		 * - we're in Front end, which means everything else is false
+		 *
+		 * Either way, we need to call config here.
+		 */
+		$this->config();
 	}
 
 	/**
@@ -381,24 +445,26 @@ class APM {
 		}
 	}
 
-	public function name_ajax_cli_cron_transactions( $transaction, $query, $apm ) {
-		if ( false !== $transaction || ! in_array( $apm->get_context(), array( 'CLI', 'AJAX', 'CRON', 'REST' ) ) ) {
+	public function name_ajax_cli_cron_transactions( $transaction, $query ) {
+		if ( false !== $transaction || ! in_array( $this->get_context(), array( 'CLI', 'AJAX', 'CRON', 'REST' ) ) ) {
 			return $transaction;
 		}
 
-		if ( 'AJAX' === $apm->get_context() ) {
+		if ( 'AJAX' === $this->get_context() ) {
 			return isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : false;
 		}
 
-		if ( 'REST' === $apm->get_context() ) {
-			return sprintf( '%s %s', $_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'] );
+		if ( 'REST' === $this->get_context() ) {
+			global $wp;
+			$trace_name = sprintf( '%s %s', $_SERVER['REQUEST_METHOD'], $wp->query_vars['rest_route'] );
+			return $trace_name;
 		}
 
-		if ( 'CRON' === $apm->get_context() ) {
+		if ( 'CRON' === $this->get_context() ) {
 			return false; // current hook firing
 		}
 
-		if ( 'CLI' === $apm->get_context() ) {
+		if ( 'CLI' === $this->get_context() ) {
 			return false; // current command
 		}
 	}
@@ -410,7 +476,7 @@ class APM {
 	 * @param [type] $transaction
 	 * @return void
 	 */
-	public function woocommerce_transaction_names( $transaction, $query, $apm ) {
+	public function woocommerce_transaction_names( $transaction, $query ) {
 
 		if ( false !== $transaction ) {
 			return $transaction;
