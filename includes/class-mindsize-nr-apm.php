@@ -36,18 +36,17 @@ class APM {
 		$this->maybe_include_template();
 
 		add_action( 'init', array( $this, 'set_custom_variables' ) );
-		add_action( 'parse_query', array( $this, 'set_transaction' ), 9999 );
+
 		add_action( 'wp', array( $this, 'set_post_id' ), 10 );
 		add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), 9999, 1 );
 		add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), 9999, 1 );
 
 		do_action( 'mindsize_nr_apm_init', $this );
 
-		add_filter( 'mindsize_nr_transaction_name', array( $this, 'name_ajax_cli_cron_transactions' ), 10, 2 );
-
 		// if woocommerce is present
 		if ( function_exists( 'wc' ) ) {
-			add_filter( 'mindsize_nr_transaction_name', array( $this, 'woocommerce_transaction_names' ), 10, 2 );
+			add_filter( 'mindsize_nr_pq_transaction_name', array( $this, 'woocommerce_pq_transaction_names' ), 10, 2 );
+			add_filter( 'mindsize_nr_ajax_transaction_name', array( $this, 'woocommerce_ajax_transaction_names' ) );
 		}
 	}
 
@@ -62,12 +61,14 @@ class APM {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$this->cli = true;
 			$this->config();
+			$this->set_cli_transaction();
 			return;
 		}
 
 		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
 			$this->cron = true;
 			$this->config();
+			$this->set_cron_transaction();
 			return;
 		}
 
@@ -91,7 +92,8 @@ class APM {
 		 * And then if any of those fire, unhook the ones following it
 		 */
 		add_action( 'wp_default_styles', array( $this, 'maybe_set_context_to_ajax' ) );
-		add_action( 'parse_query',       array( $this, 'maybe_set_context_to_rest_or_fe' ) );
+		add_action( 'rest_api_init',     array( $this, 'maybe_set_context_to_rest' ) );
+		add_action( 'parse_query',       array( $this, 'maybe_set_context_to_fe' ) );
 	}
 
 	/**
@@ -104,12 +106,36 @@ class APM {
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			$this->ajax = true;
 			$this->config();
+			$this->set_ajax_transaction();
 
 			/**
 			 * Because we've determined we're in AJAX context, we're gonna set the app to AJAX, and then
-			 * remove the check for REST.
+			 * remove the check for REST and FE.
 			 */
-			remove_action( 'parse_query',       array( $this, 'maybe_set_context_to_rest_or_fe' ) );
+			remove_action( 'rest_api_init',       array( $this, 'maybe_set_context_to_rest' ) );
+			remove_action( 'parse_query',       array( $this, 'maybe_set_context_to_fe' ) );
+		}
+	}
+
+	/**
+	 * Hooked into {@see rest_api_init} action, this will test whether we're in a REST or front end
+	 * context.
+	 *
+	 * Hilarity: REST will go through parse_query IF and only IF it's not the index, or not a
+	 * notfound route.
+	 *
+	 * @return void
+	 */
+	public function maybe_set_context_to_rest() {
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			$this->rest = true;
+			$this->config();
+			$this->set_rest_transaction();
+
+			/**
+			 * We're in REST territory, let's remove the FE check
+			 */
+			remove_action( 'parse_query',       array( $this, 'maybe_set_context_to_fe' ) );
 		}
 	}
 
@@ -119,16 +145,7 @@ class APM {
 	 *
 	 * @return void
 	 */
-	public function maybe_set_context_to_rest_or_fe() {
-		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-			$this->rest = true;
-
-			$this->config();
-
-			// early terminate
-			return;
-		}
-
+	public function maybe_set_context_to_fe() {
 		$this->frontend = ! ( $this->admin || $this->cron || $this->ajax || $this->rest || $this->cli );
 
 		/**
@@ -141,6 +158,7 @@ class APM {
 		 * Either way, we need to call config here.
 		 */
 		$this->config();
+		$this->set_pq_transaction();
 	}
 
 	/**
@@ -315,20 +333,113 @@ class APM {
 	}
 
 	/**
-	 * Set current transaction name as per the main WP_Query
+	 * Called from {@see maybe_set_context_to_cli}
 	 *
-	 * @param $query
+	 * @return void
 	 */
-	public function set_transaction( $query ) {
-
+	private function set_cli_transaction() {
 		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
 			return;
 		}
 
-		// set transaction
-		$transaction = apply_filters( 'mindsize_nr_transaction_name', false, $query, $this );
 
-		if ( false === $transaction && $query->is_main_query() ) {
+		$transaction = apply_filters( 'mindsize_nr_cli_transaction_name', false, $this );
+
+		if ( false === $transaction ) {
+			$transaction = sprintf( 'wp %s', implode( ' ', \WP_CLI::get_runner()->arguments ) );
+		}
+
+		$assoc_args = \WP_CLI::get_runner()->assoc_args;
+
+		if ( ! empty( $assoc_args ) ) {
+			$assoc = [];
+			foreach( $assoc_args as $arg => $value ) {
+				$assoc[] = sprintf( '--%s=%s', $arg, $value );
+			}
+
+			newrelic_add_custom_parameter( 'assoc_args', implode( ' ', $assoc ) );
+		}
+
+		newrelic_name_transaction( apply_filters( 'wp_nr_cli_transaction_name', $transaction ) );
+	}
+
+	private function set_cron_transaction() {
+
+	}
+
+	/**
+	 * Called from {@see maybe_set_context_to_ajax}.
+	 *
+	 * @return string
+	 */
+	private function set_ajax_transaction() {
+		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
+			return;
+		}
+
+		$transaction = apply_filters( 'mindsize_nr_ajax_transaction_name', false, $this );
+
+		if ( false === $transaction ) {
+			$transaction = array_key_exists( 'action', $_REQUEST ) ? $_REQUEST['action'] : 'generic ajax request';
+		}
+
+		if ( ! empty( $transaction ) ) {
+			newrelic_name_transaction( apply_filters( 'wp_nr_ajax_transaction_name', $transaction ) );
+		}
+	}
+
+	/**
+	 * Called from {@see maybe_set_context_to_rest}.
+	 *
+	 * @return void
+	 */
+	private function set_rest_transaction() {
+		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
+			return;
+		}
+
+		$transaction = apply_filters( 'mindsize_nr_rest_transaction_name', false, $this );
+
+		if ( false === $transaction ) {
+			if ( empty( $wp->query_vars['rest_route'] ) ) {
+				$route = '/';
+			} else {
+				$route = $wp->query_vars['rest_route'];
+			}
+
+			$transaction = sprintf( '%s %s', $_SERVER['REQUEST_METHOD'], $route );
+		}
+
+		if ( ! empty( $transaction ) ) {
+			newrelic_name_transaction( apply_filters( 'wp_nr_rest_transaction_name', $transaction ) );
+		}
+	}
+
+	/**
+	 * Set current transaction name as per the main WP_Query
+	 *
+	 * This is hooked into {@see parse_query}, so it's available in the following contexts:
+	 * - Frontend
+	 * - Admin
+	 *
+	 * It is NOT available in the following contexts:
+	 * - REST (technically it would be on *some routes*, but we removed it for reliability. There's another method for that)
+	 * - CRON
+	 * - CLI
+	 * - AJAX (technically would be on *some*, but there's another method for that)
+	 *
+	 * @param WP_Query $query
+	 */
+	private function set_pq_transaction() {
+		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
+			return;
+		}
+
+		global $wp_query;
+
+		$transaction = apply_filters( 'mindsize_nr_pq_transaction_name', false, $wp_query, $this );
+
+		if ( false === $transaction && $wp_query->is_main_query() ) {
 			if ( is_front_page() && is_home() ) {
 				$transaction = 'Default Home Page';
 			} elseif ( is_front_page() ) {
@@ -340,18 +451,18 @@ class APM {
 			} elseif ( is_admin() ) {
 				$transaction = 'Dashboard';
 			} elseif ( is_single() ) {
-				$post_type = ( ! empty( $query->query['post_type'] ) ) ? $query->query['post_type'] : 'Post';
+				$post_type = ( ! empty( $wp_query->query['post_type'] ) ) ? $wp_query->query['post_type'] : 'Post';
 				$transaction = "Single - {$post_type}";
 			} elseif ( is_page() ) {
-				if ( isset( $query->query['pagename'] ) ) {
-					$this->add_custom_parameter( 'page', $query->query['pagename'] );
+				if ( isset( $wp_query->query['pagename'] ) ) {
+					$this->add_custom_parameter( 'page', $wp_query->query['pagename'] );
 				}
 				$transaction = "Page";
 			} elseif ( is_date() ) {
 				$transaction = 'Date Archive';
 			} elseif ( is_search() ) {
-				if ( isset( $query->query['s'] ) ) {
-					$this->add_custom_parameter( 'search', $query->query['s'] );
+				if ( isset( $wp_query->query['s'] ) ) {
+					$this->add_custom_parameter( 'search', $wp_query->query['s'] );
 				}
 				$transaction = 'Search Page';
 			} elseif ( is_feed() ) {
@@ -360,25 +471,25 @@ class APM {
 				$post_type = post_type_archive_title( '', false );
 				$transaction = "Archive - {$post_type}";
 			} elseif ( is_category() ) {
-				if ( isset( $query->query['category_name'] ) ) {
-					$this->add_custom_parameter( 'cat_slug', $query->query['category_name'] );
+				if ( isset( $wp_query->query['category_name'] ) ) {
+					$this->add_custom_parameter( 'cat_slug', $wp_query->query['category_name'] );
 				}
 				$transaction = "Category";
 			} elseif ( is_tag() ) {
-				if ( isset( $query->query['tag'] ) ) {
-					$this->add_custom_parameter( 'tag_slug', $query->query['tag'] );
+				if ( isset( $wp_query->query['tag'] ) ) {
+					$this->add_custom_parameter( 'tag_slug', $wp_query->query['tag'] );
 				}
 				$transaction = "Tag";
 			} elseif ( is_tax() ) {
-				$tax    = key( $query->tax_query->queried_terms );
-				$term   = implode( ' | ', $query->tax_query->queried_terms[ $tax ]['terms'] );
+				$tax    = key( $wp_query->tax_query->queried_terms );
+				$term   = implode( ' | ', $wp_query->tax_query->queried_terms[ $tax ]['terms'] );
 				$this->add_custom_parameter( 'term_slug', $term );
 				$transaction = "Tax - {$tax}";
 			}
 		}
 
 		if ( ! empty( $transaction ) ) {
-			newrelic_name_transaction( apply_filters( 'wp_nr_transaction_name', $transaction ) );
+			newrelic_name_transaction( apply_filters( 'wp_nr_pq_transaction_name', $transaction ) );
 		}
 	}
 
@@ -445,38 +556,29 @@ class APM {
 		}
 	}
 
-	public function name_ajax_cli_cron_transactions( $transaction, $query ) {
-		if ( false !== $transaction || ! in_array( $this->get_context(), array( 'CLI', 'AJAX', 'CRON', 'REST' ) ) ) {
+	/**
+	 * Hooked into {@see mindsize_nr_ajax_transaction_name}, changes the AJAX transaction name
+	 * if it's WooCommerce
+	 *
+	 * @param string $transaction
+	 * @return void
+	 */
+	public function woocommerce_ajax_transaction_names( $transaction ) {
+		if ( false !== $transaction ) {
 			return $transaction;
 		}
 
-		if ( 'AJAX' === $this->get_context() ) {
-			return isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : false;
-		}
-
-		if ( 'REST' === $this->get_context() ) {
-			global $wp;
-			$trace_name = sprintf( '%s %s', $_SERVER['REQUEST_METHOD'], $wp->query_vars['rest_route'] );
-			return $trace_name;
-		}
-
-		if ( 'CRON' === $this->get_context() ) {
-			return false; // current hook firing
-		}
-
-		if ( 'CLI' === $this->get_context() ) {
-			return false; // current command
-		}
+		return array_key_exists( 'wc-ajax', $_REQUEST ) ? sprintf( 'WC AJAX: %s', $_REQUEST['wc-ajax'] ) : $transaction;
 	}
 
 	/**
-	 * Method that hooks into the {@see $this->set_transaction} method to overwrite the transaction name and
+	 * Method that hooks into the {@see $this->set_pq_transaction} method to overwrite the transaction name and
 	 * maybe set a custom parameter in case of the shop.
 	 *
-	 * @param [type] $transaction
+	 * @param string $transaction
 	 * @return void
 	 */
-	public function woocommerce_transaction_names( $transaction, $query ) {
+	public function woocommerce_pq_transaction_names( $transaction, $query ) {
 
 		if ( false !== $transaction ) {
 			return $transaction;
