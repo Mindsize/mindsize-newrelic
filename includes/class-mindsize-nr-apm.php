@@ -397,6 +397,7 @@ class APM {
 		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
 			return;
 		}
+		global $wp;
 
 		$transaction = apply_filters( 'mindsize_nr_rest_transaction_name', false, $this );
 
