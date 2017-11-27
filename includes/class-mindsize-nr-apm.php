@@ -77,14 +77,13 @@ class APM {
 		 * but we're not going to config or break because AJAX is only available later.
 		 */
 		if ( is_admin() ) {
-			$this->admin = 'true';
+			$this->admin = true;
 		}
 
 		/**
 		 * If we've gotten here, we're not in CRON, CLI, so let's schedule the next ones:
-		 * - wp_default_styles: check for AJAX
-		 * - parse_query: check for REST
-		 * - parse_query: to check for front end, because rest_api_init is not available there
+		 * - wp_default_styles: check for AJAX, Admin, or Front end
+		 * - rest_api_init: check for REST
 		 *
 		 * Why can't we use parse_query for AJAX check? Because parse_query doesn't run for AJAX
 		 * requests...
@@ -105,7 +104,6 @@ class APM {
 	public function maybe_set_context_to_ajax() {
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			$this->ajax = true;
-			$this->config();
 			$this->set_ajax_transaction();
 
 			/**
@@ -113,8 +111,24 @@ class APM {
 			 * remove the check for REST and FE.
 			 */
 			remove_action( 'rest_api_init',       array( $this, 'maybe_set_context_to_rest' ) );
-			remove_action( 'parse_query',       array( $this, 'maybe_set_context_to_fe' ) );
+			remove_action( 'parse_query',         array( $this, 'maybe_set_context_to_fe' ) );
 		}
+		/**
+		 * Setting it here will cause both front end AND REST be set to true, but since we're getting our
+		 * context in an order where REST comes first, this is acceptable.
+		 */
+		$this->frontend = ! ( $this->admin || $this->cron || $this->ajax || $this->cli );
+
+		/**
+		 * The reason I have this here, in wp_default_styles, is because this is the first time where I can
+		 * semi-reliably tell what's going on. If we're not in AJAX, we're either Admin or Front end at
+		 * this point. We're not unhooking the rest_api_init, because that comes later, so we *could* be in
+		 * rest context as well.
+		 *
+		 * The downside of this is that the app name will be set twice. The upside is that there's literally
+		 * no other way to achieve this.
+		 */
+		$this->config();
 	}
 
 	/**
@@ -146,19 +160,13 @@ class APM {
 	 * @return void
 	 */
 	public function maybe_set_context_to_fe() {
-		$this->frontend = ! ( $this->admin || $this->cron || $this->ajax || $this->rest || $this->cli );
-
 		/**
-		 * Since this is the last point we can check where we are, there are three possibilities here:
-		 * - we're in REST, as determined a few lines above
-		 * - we're in AJAX, as determined a hook before
-		 * - we're in Admin, as determined several hooks before, but had to wait for AJAX
+		 * Since this is the last point the only possibility here is that we're in admin
 		 * - we're in Front end, which means everything else is false
 		 *
 		 * Either way, we need to call config here.
 		 */
-		$this->config();
-		$this->set_pq_transaction();
+		$this->set_fe_transaction();
 	}
 
 	/**
@@ -431,7 +439,7 @@ class APM {
 	 *
 	 * @param WP_Query $query
 	 */
-	private function set_pq_transaction() {
+	private function set_fe_transaction() {
 		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
 			return;
 		}
@@ -447,10 +455,6 @@ class APM {
 				$transaction = 'Front Page';
 			} elseif ( is_home() ) {
 				$transaction = 'Blog Page';
-			} elseif ( is_network_admin() ) {
-				$transaction = 'Network Dashboard';
-			} elseif ( is_admin() ) {
-				$transaction = 'Dashboard';
 			} elseif ( is_single() ) {
 				$post_type = ( ! empty( $wp_query->query['post_type'] ) ) ? $wp_query->query['post_type'] : 'Post';
 				$transaction = "Single - {$post_type}";
@@ -573,7 +577,7 @@ class APM {
 	}
 
 	/**
-	 * Method that hooks into the {@see $this->set_pq_transaction} method to overwrite the transaction name and
+	 * Method that hooks into the {@see $this->set_fe_transaction} method to overwrite the transaction name and
 	 * maybe set a custom parameter in case of the shop.
 	 *
 	 * @param string $transaction
