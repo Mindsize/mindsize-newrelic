@@ -186,6 +186,7 @@ class APM {
 			newrelic_capture_params( $this->config['newrelic.capture_params'] );
 		}
 
+		// Watch out, because this will be ran twice for REST routes!
 		do_action( 'mindsize_nr_setup_config', $this->config );
 	}
 
@@ -337,7 +338,7 @@ class APM {
 		 */
 		$theme = wp_get_theme();
 		newrelic_add_custom_parameter( 'Theme Name', $theme->get( 'Name' ) );
-		newrelic_add_custom_parameter( 'Theme files', $theme->get_stylesheet() );
+		newrelic_add_custom_parameter( 'Theme Files', $theme->get_stylesheet() );
 	}
 
 	/**
@@ -349,7 +350,6 @@ class APM {
 		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
 			return;
 		}
-
 
 		$transaction = apply_filters( 'mindsize_nr_cli_transaction_name', false, $this );
 
@@ -372,7 +372,7 @@ class APM {
 	}
 
 	private function set_cron_transaction() {
-
+		// Currently there's no way to reliably figure out which cron schedule we're running
 	}
 
 	/**
