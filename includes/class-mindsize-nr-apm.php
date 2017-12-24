@@ -51,6 +51,32 @@ class APM {
 	}
 
 	/**
+	 * This is practically a copy of the default is_admin() function in WordPress core (as of 4.9.1).
+	 *
+	 * Reason we need this is because is_admin returns true for a bunch of other requests as well that
+	 * are technically not the admin. Those are:
+	 * - load-scripts.php
+	 * - load-styles.php
+	 * - ajax requests
+	 *
+	 * {@see https://codex.wordpress.org/Function_Reference/is_admin}
+	 *
+	 * This will STILL be true for ajax requests, but the load-scripts and load-styles should no longer
+	 * be counted as Admin requests.
+	 *
+	 * @return boolean whether we're actually on the
+	 */
+	private function is_admin() {
+		if ( isset( $GLOBALS['current_screen'] ) ) {
+			return $GLOBALS['current_screen']->in_admin();
+		} elseif ( defined( 'WP_ADMIN' ) ) {
+			return WP_ADMIN;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Sets up request context so we can separate the apps in the apm by name and set additional
 	 * custom variables later.
 	 */
@@ -76,7 +102,7 @@ class APM {
 		 * Admin is less important than AJAX, so we'll set it here (because it's available),
 		 * but we're not going to config or break because AJAX is only available later.
 		 */
-		if ( is_admin() ) {
+		if ( $this->is_admin() ) {
 			$this->admin = true;
 		}
 
