@@ -111,14 +111,14 @@ class APM {
 		 * - wp_default_styles: check for AJAX, Admin, or Front end
 		 * - rest_api_init: check for REST
 		 *
-		 * Why can't we use parse_query for AJAX check? Because parse_query doesn't run for AJAX
+		 * Why can't we use wp for AJAX check? Because wp doesn't run for AJAX
 		 * requests...
 		 *
 		 * And then if any of those fire, unhook the ones following it
 		 */
 		add_action( 'wp_default_styles', array( $this, 'maybe_set_context_to_ajax' ) );
-		add_action( 'rest_api_init',     array( $this, 'maybe_set_context_to_rest' ) );
-		add_action( 'parse_query',       array( $this, 'maybe_set_context_to_fe' ) );
+		add_action( 'rest_api_init', array( $this, 'maybe_set_context_to_rest' ) );
+		add_action( 'wp', array( $this, 'maybe_set_context_to_fe' ) );
 	}
 
 	/**
@@ -136,8 +136,8 @@ class APM {
 			 * Because we've determined we're in AJAX context, we're gonna set the app to AJAX, and then
 			 * remove the check for REST and FE.
 			 */
-			remove_action( 'rest_api_init',       array( $this, 'maybe_set_context_to_rest' ) );
-			remove_action( 'parse_query',         array( $this, 'maybe_set_context_to_fe' ) );
+			remove_action( 'rest_api_init', array( $this, 'maybe_set_context_to_rest' ) );
+			remove_action( 'wp', array( $this, 'maybe_set_context_to_fe' ) );
 		}
 		/**
 		 * Setting it here will cause both front end AND REST be set to true, but since we're getting our
@@ -161,7 +161,7 @@ class APM {
 	 * Hooked into {@see rest_api_init} action, this will test whether we're in a REST or front end
 	 * context.
 	 *
-	 * Hilarity: REST will go through parse_query IF and only IF it's not the index, or not a
+	 * Hilarity: REST will go through wp IF and only IF it's not the index, or not a
 	 * notfound route.
 	 *
 	 * @return void
@@ -175,12 +175,12 @@ class APM {
 			/**
 			 * We're in REST territory, let's remove the FE check
 			 */
-			remove_action( 'parse_query',       array( $this, 'maybe_set_context_to_fe' ) );
+			remove_action( 'wp', array( $this, 'maybe_set_context_to_fe' ) );
 		}
 	}
 
 	/**
-	 * Hooked into {@see parse_query} action, this will test whether we're in a REST or front end
+	 * Hooked into {@see wp} action, this will test whether we're in a REST or front end
 	 * context.
 	 *
 	 * @return void
@@ -453,7 +453,7 @@ class APM {
 	/**
 	 * Set current transaction name as per the main WP_Query
 	 *
-	 * This is hooked into {@see parse_query}, so it's available in the following contexts:
+	 * This is hooked into {@see wp}, so it's available in the following contexts:
 	 * - Frontend
 	 * - Admin
 	 *
