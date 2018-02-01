@@ -2,7 +2,7 @@
   "name": "mindsize/mindsize-newrelic",
   "description": "Better WordPress data for New Relic, with WooCommerce support.",
   "type": "wordpress-plugin",
-  "license": "GPL-2.0",
+  "license": "GPL-2.0-only",
   "require": {
     "composer/installers": "^1.4",
     "xrstf/composer-php52": "^1.0"
