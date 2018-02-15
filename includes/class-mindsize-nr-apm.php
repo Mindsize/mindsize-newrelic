@@ -301,80 +301,6 @@ class APM {
 	}
 
 	/**
-	 * Ajax and Cron requests should not have the Browser extension
-	 */
-	private function maybe_disable_autorum() {
-		if ( $this->ajax || $this->cron ) {
-			$this->disable_nr_autorum();
-		} else {
-			add_action( 'pre_amp_render_post', array( $this, 'disable_nr_autorum' ), 9999, 1 );
-		}
-	}
-
-	/**
-	 * Return default configuration that can be filtered.
-	 *
-	 * @return array    default configuration values
-	 */
-	private function get_default_config() {
-		return [
-			'newrelic.appname' => $this->get_appname(),
-			'newrelic.capture_params' => $this->plugin->helper->get_capture_url(),
-		];
-	}
-
-	/**
-	 * Returns the app name to be used by logging. By default it will be the host as set in the home_url,
-	 * appended by the context, if it's not the front page.
-	 *
-	 * Examples:
-	 * example.com CLI
-	 * example.com REST
-	 * example.com CRON
-	 * example.com AJAX
-	 * example.com Admin
-	 * example.com
-	 *
-	 * @return string            name to be used as the app name
-	 */
-	private function get_appname() {
-		$context = $this->get_context();
-		$home_url = parse_url( home_url() );
-
-		$app_name = $home_url['host'] . ( isset( $home_url['path'] ) ? $home_url['path'] : '' ) . ' ' . $context;
-
-		return apply_filters( 'mindsize_nr_app_name', $app_name, $context );
-	}
-
-	/**
-	 * Disable New Relic autorum
-	 *
-	 * @param $post_id
-	 */
-	public function disable_nr_autorum( $post_id = null ) {
-		if ( ! function_exists( 'newrelic_disable_autorum' ) ) {
-			return;
-		}
-
-		if ( apply_filters( 'disable_post_autorum', true, $post_id ) ) {
-			newrelic_disable_autorum();
-		}
-	}
-
-	/**
-	 * Set template custom parameter in current transaction
-	 *
-	 * @param $template
-	 *
-	 * @return mixed
-	 */
-	public function set_template( $template ) {
-		$this->add_custom_parameter( 'template', $template );
-
-		return $template;
-	}
-
-	/**
 	 * Set current transaction name as per the main WP_Query
 	 *
 	 * This is hooked into {@see wp}, so it's available in the following contexts:
@@ -448,6 +374,80 @@ class APM {
 		}
 
 		$this->set_post_id();
+	}
+
+	/**
+	 * Ajax and Cron requests should not have the Browser extension
+	 */
+	private function maybe_disable_autorum() {
+		if ( $this->ajax || $this->cron ) {
+			$this->disable_nr_autorum();
+		} else {
+			add_action( 'pre_amp_render_post', array( $this, 'disable_nr_autorum' ), 9999, 1 );
+		}
+	}
+
+	/**
+	 * Return default configuration that can be filtered.
+	 *
+	 * @return array    default configuration values
+	 */
+	private function get_default_config() {
+		return [
+			'newrelic.appname' => $this->get_appname(),
+			'newrelic.capture_params' => $this->plugin->helper->get_capture_url(),
+		];
+	}
+
+	/**
+	 * Returns the app name to be used by logging. By default it will be the host as set in the home_url,
+	 * appended by the context, if it's not the front page.
+	 *
+	 * Examples:
+	 * example.com CLI
+	 * example.com REST
+	 * example.com CRON
+	 * example.com AJAX
+	 * example.com Admin
+	 * example.com
+	 *
+	 * @return string            name to be used as the app name
+	 */
+	private function get_appname() {
+		$context = $this->get_context();
+		$home_url = parse_url( home_url() );
+
+		$app_name = $home_url['host'] . ( isset( $home_url['path'] ) ? $home_url['path'] : '' ) . ' ' . $context;
+
+		return apply_filters( 'mindsize_nr_app_name', $app_name, $context );
+	}
+
+	/**
+	 * Disable New Relic autorum
+	 *
+	 * @param $post_id
+	 */
+	public function disable_nr_autorum( $post_id = null ) {
+		if ( ! function_exists( 'newrelic_disable_autorum' ) ) {
+			return;
+		}
+
+		if ( apply_filters( 'disable_post_autorum', true, $post_id ) ) {
+			newrelic_disable_autorum();
+		}
+	}
+
+	/**
+	 * Set template custom parameter in current transaction
+	 *
+	 * @param $template
+	 *
+	 * @return mixed
+	 */
+	public function set_template( $template ) {
+		$this->add_custom_parameter( 'template', $template );
+
+		return $template;
 	}
 
 	/**
