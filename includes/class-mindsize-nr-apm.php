@@ -47,11 +47,6 @@ class APM {
 		}
 
 		do_action( 'mindsize_nr_apm_init', $this );
-		// $this->maybe_include_template();
-
-		// add_action( 'init', array( $this, 'set_custom_variables' ) );
-
-		// add_action( 'wp', array( $this, 'set_post_id' ), 10 );
 	}
 
 	/**
@@ -158,7 +153,33 @@ class APM {
 	}
 
 	private function prepare_extra_data() {
+		switch ( $this->get_context() ) {
+			case 'cli':
+				$this->set_cli_transaction();
+				break;
+			case 'cron':
+				// nothing here
+				break;
+			case 'rest':
+				$this->set_rest_transaction();
+				break;
+			case 'ajax':
+				$this->set_ajax_transaction();
+				break;
+			case 'admin':
+				$this->set_admin_transaction();
+				break;
+			case 'frontend':
+				$this->set_fe_transaction();
+				break;
+		}
 
+
+		// $this->maybe_include_template();
+
+		// add_action( 'init', array( $this, 'set_custom_variables' ) );
+
+		// add_action( 'wp', array( $this, 'set_post_id' ), 10 );
 	}
 
 	/**
