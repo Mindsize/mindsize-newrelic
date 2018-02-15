@@ -16,7 +16,7 @@ class UrlMatcher {
 			case defined( 'WP_CLI' ) && WP_CLI:
 				return 'cli';
 				break;
-			case defined( 'DOING_CRON' ) && DOING_CRON:
+			case ( defined( 'DOING_CRON' ) && DOING_CRON ) || isset( $_GET['doing_wp_cron'] ):
 				return 'cron';
 				break;
 			case $this->are_we_on_rest():
