@@ -536,7 +536,7 @@ class APM {
 	 * @param $value    string  Custom parameter value
 	 * @return bool
 	 */
-	public function add_custom_parameter( $key, $value ) {
+	private function add_custom_parameter( $key, $value ) {
 		if ( function_exists( 'newrelic_add_custom_parameter' ) ) {
 			//prefixing with msnr_ to avoid collisions with reserved works in NRQL
 			$key = 'msnr_' . $key;
