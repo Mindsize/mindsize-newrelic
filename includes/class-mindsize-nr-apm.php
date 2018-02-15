@@ -193,7 +193,7 @@ class APM {
 	 * Hooked into {@see shutdown}, this will populate everything. Shutdown happens everywhere, and will have
 	 * all the information available.
 	 */
-	private function prepare_extra_data() {
+	public function populate_extra_data() {
 		switch ( $this->get_context() ) {
 			case 'CLI':
 				$this->set_cli_transaction();
