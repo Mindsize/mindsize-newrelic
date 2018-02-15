@@ -35,8 +35,11 @@ class APM {
 		$this->config();
 		$this->maybe_disable_autorum();
 
-		add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), 9999, 1 );
-		add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), 9999, 1 );
+		add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), PHP_INT_MAX, 1 );
+		add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), PHP_INT_MAX, 1 );
+
+		// this needs to be here because I don't have the information any longer on shutdown
+		add_filter( 'template_include', array( $this, 'set_template' ), PHP_INT_MAX );
 
 		add_action( 'shutdown', array( $this, 'populate_extra_data' ) );
 
@@ -152,6 +155,10 @@ class APM {
 		do_action( 'mindsize_nr_setup_config', $this->config );
 	}
 
+	/**
+	 * Hooked into {@see shutdown}, this will populate everything. Shutdown happens everywhere, and will have
+	 * all the information available.
+	 */
 	private function prepare_extra_data() {
 		switch ( $this->get_context() ) {
 			case 'cli':
@@ -173,13 +180,7 @@ class APM {
 				$this->set_fe_transaction();
 				break;
 		}
-
-
-		// $this->maybe_include_template();
-
 		// add_action( 'init', array( $this, 'set_custom_variables' ) );
-
-		// add_action( 'wp', array( $this, 'set_post_id' ), 10 );
 	}
 
 	/**
@@ -270,11 +271,7 @@ class APM {
 	/**
 	 * Only include the template on the frontend
 	 */
-	private function maybe_include_template() {
-		if ( ! $this->frontend ) {
-			return;
-		}
-
+	private function include_template() {
 		add_filter( 'template_include', array( $this, 'set_template' ), 9999 );
 	}
 
