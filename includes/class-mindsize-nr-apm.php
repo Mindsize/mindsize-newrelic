@@ -180,7 +180,26 @@ class APM {
 				$this->set_fe_transaction();
 				break;
 		}
-		// add_action( 'init', array( $this, 'set_custom_variables' ) );
+
+		/**
+		 * Set the user
+		 */
+		if ( function_exists( 'newrelic_set_user_attributes' ) ) {
+			if ( is_user_logged_in() ) {
+				$user = wp_get_current_user();
+				newrelic_set_user_attributes( $user->ID, '', implode( ', ', $user->roles ) );
+			} else {
+				newrelic_set_user_attributes( 'not-logged-in', '', 'no-role' );
+			}
+		}
+
+		/**
+		 * Set the theme used
+		 */
+		$theme = wp_get_theme();
+
+		$this->add_custom_parameter( 'theme_name', $theme->get( 'Name' ) );
+		$this->add_custom_parameter( 'theme_name', $theme->get_stylesheet()  );
 	}
 
 	/**
