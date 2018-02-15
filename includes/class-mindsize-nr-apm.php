@@ -32,6 +32,7 @@ class APM {
 	public function init() {
 		// Because this is set to plugins_loaded, we can just call this
 		$this->set_context();
+		$this->config();
 		$this->maybe_disable_autorum();
 
 		add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), 9999, 1 );
@@ -135,6 +136,27 @@ class APM {
 		}
 	}
 
+	/**
+	 * Setup the default config variables for our request.
+	 */
+	public function config() {
+		$this->config = apply_filters( 'mindsize_nr_default_config', $this->get_default_config() );
+
+		if ( ! $this->config ) {
+			return;
+		}
+
+		if ( isset( $this->config['newrelic.appname'] ) && function_exists( 'newrelic_set_appname' ) ) {
+			newrelic_set_appname( $this->config['newrelic.appname'] );
+		}
+		if ( isset( $this->config['newrelic.capture_params'] ) && function_exists( 'newrelic_capture_params' ) ) {
+			newrelic_capture_params( $this->config['newrelic.capture_params'] );
+		}
+
+		// Watch out, because this will be ran twice for REST routes!
+		do_action( 'mindsize_nr_setup_config', $this->config );
+	}
+
 	private function prepare_extra_data() {
 
 	}
@@ -211,27 +233,6 @@ class APM {
 		 * Either way, we need to call config here.
 		 */
 		$this->set_fe_transaction();
-	}
-
-	/**
-	 * Setup the default config variables for our request.
-	 */
-	public function config() {
-		$this->config = apply_filters( 'mindsize_nr_default_config', $this->get_default_config() );
-
-		if ( ! $this->config ) {
-			return;
-		}
-
-		if ( isset( $this->config['newrelic.appname'] ) && function_exists( 'newrelic_set_appname' ) ) {
-			newrelic_set_appname( $this->config['newrelic.appname'] );
-		}
-		if ( isset( $this->config['newrelic.capture_params'] ) && function_exists( 'newrelic_capture_params' ) ) {
-			newrelic_capture_params( $this->config['newrelic.capture_params'] );
-		}
-
-		// Watch out, because this will be ran twice for REST routes!
-		do_action( 'mindsize_nr_setup_config', $this->config );
 	}
 
 	/**
