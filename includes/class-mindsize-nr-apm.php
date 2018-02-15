@@ -528,9 +528,9 @@ class APM {
 	 *
 	 * @param $wp
 	 */
-	public function set_post_id( $wp ) {
-		if ( is_single() && function_exists( 'newrelic_add_custom_parameter' ) ) {
-			newrelic_add_custom_parameter( 'post_id', apply_filters( 'mindsize_nr_post_id', get_the_ID() ) );
+	private function set_post_id( $wp ) {
+		if ( is_single() ) {
+			$this->add_custom_parameter( 'post_id', apply_filters( 'mindsize_nr_post_id', get_the_ID() ) );
 		}
 	}
 
