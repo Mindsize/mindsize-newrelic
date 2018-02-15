@@ -151,7 +151,6 @@ class APM {
 			newrelic_capture_params( $this->config['newrelic.capture_params'] );
 		}
 
-		// Watch out, because this will be ran twice for REST routes!
 		do_action( 'mindsize_nr_setup_config', $this->config );
 	}
 
