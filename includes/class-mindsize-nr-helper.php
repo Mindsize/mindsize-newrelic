@@ -16,6 +16,8 @@ class Plugin_Helper {
 
 	public function __construct( $plugin ) {
 		$this->plugin = $plugin;
+
+		$this->urlmatcher = new UrlMatcher( $plugin );
 	}
 
 	/**

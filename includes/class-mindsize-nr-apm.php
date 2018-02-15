@@ -30,24 +30,31 @@ class APM {
 	 * Let's start the plugin then!
 	 */
 	public function init() {
-		$this->maybe_set_context();
+		// wp_die( es_preit( array( __FILE__ . ':' . __LINE__, 'slmfsmdfml' ), true ) );
+		$this->set_context();
 
-		$this->maybe_disable_autorum();
-		$this->maybe_include_template();
+		// $this->maybe_disable_autorum();
+		// $this->maybe_include_template();
 
-		add_action( 'init', array( $this, 'set_custom_variables' ) );
+		// add_action( 'init', array( $this, 'set_custom_variables' ) );
 
-		add_action( 'wp', array( $this, 'set_post_id' ), 10 );
-		add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), 9999, 1 );
-		add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), 9999, 1 );
+		// add_action( 'wp', array( $this, 'set_post_id' ), 10 );
+		// add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), 9999, 1 );
+		// add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), 9999, 1 );
 
-		do_action( 'mindsize_nr_apm_init', $this );
+		// do_action( 'mindsize_nr_apm_init', $this );
 
-		// if woocommerce is present
-		if ( function_exists( 'wc' ) ) {
-			add_filter( 'mindsize_nr_pq_transaction_name', array( $this, 'woocommerce_pq_transaction_names' ), 10, 2 );
-			add_filter( 'mindsize_nr_ajax_transaction_name', array( $this, 'woocommerce_ajax_transaction_names' ) );
-		}
+		// // if woocommerce is present
+		// if ( function_exists( 'wc' ) ) {
+		// 	add_filter( 'mindsize_nr_pq_transaction_name', array( $this, 'woocommerce_pq_transaction_names' ), 10, 2 );
+		// 	add_filter( 'mindsize_nr_ajax_transaction_name', array( $this, 'woocommerce_ajax_transaction_names' ) );
+		// }
+	}
+
+	private function set_context() {
+		$context = $this->plugin->helper->urlmatcher->get_context();
+		wp_die( es_preit( array( __FILE__ . ':' . __LINE__, $context ), true ) );
+
 	}
 
 	/**

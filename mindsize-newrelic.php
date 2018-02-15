@@ -39,5 +39,5 @@ if( class_exists( __NAMESPACE__ .'\\Plugin_Factory' ) ) {
 		$plugin->init();
 	}
 
-	add_action( 'muplugins_loaded', __NAMESPACE__ . '\\init_plugin' );
+	add_action( 'plugins_loaded', __NAMESPACE__ . '\\init_plugin' );
 }
