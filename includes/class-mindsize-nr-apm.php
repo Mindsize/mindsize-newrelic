@@ -30,27 +30,47 @@ class APM {
 	 * Let's start the plugin then!
 	 */
 	public function init() {
-		// wp_die( es_preit( array( __FILE__ . ':' . __LINE__, 'slmfsmdfml' ), true ) );
+		// Because this is set to plugins_loaded, we can just call this
 		$this->set_context();
+		$this->maybe_disable_autorum();
 
-		// $this->maybe_disable_autorum();
+		add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), 9999, 1 );
+		add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), 9999, 1 );
+
+		add_action( 'shutdown', array( $this, 'populate_extra_data' ) );
+
+		// if woocommerce is present. These are called via populate_extra_data
+		if ( function_exists( 'wc' ) ) {
+			add_filter( 'mindsize_nr_pq_transaction_name', array( $this, 'woocommerce_pq_transaction_names' ), 10, 2 );
+			add_filter( 'mindsize_nr_ajax_transaction_name', array( $this, 'woocommerce_ajax_transaction_names' ) );
+		}
+
+		do_action( 'mindsize_nr_apm_init', $this );
 		// $this->maybe_include_template();
 
 		// add_action( 'init', array( $this, 'set_custom_variables' ) );
 
 		// add_action( 'wp', array( $this, 'set_post_id' ), 10 );
-		// add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), 9999, 1 );
-		// add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), 9999, 1 );
-
-		// do_action( 'mindsize_nr_apm_init', $this );
-
-		// // if woocommerce is present
-		// if ( function_exists( 'wc' ) ) {
-		// 	add_filter( 'mindsize_nr_pq_transaction_name', array( $this, 'woocommerce_pq_transaction_names' ), 10, 2 );
-		// 	add_filter( 'mindsize_nr_ajax_transaction_name', array( $this, 'woocommerce_ajax_transaction_names' ) );
-		// }
 	}
 
+	/**
+	 * Called immediately from the {@see self::init} method (which is hooked into plugins_loaded),
+	 * this will use the UrlMatcher helper to decide what context we're on. We need to do it this
+	 * way because otherwise we don't know whether we're calling a WPCLI script, or a CRON script,
+	 * though... both of those can be figured out by looking at other things. For example
+	 *
+	 * CLI:
+	 *   - $_SERVER['SCRIPT_FILENAME'] will be path to the wp executable
+	 *   - $_SERVER['REQUEST_URI'] will be empty
+	 *   - will have an $_SERVER['argv']
+	 *     - $_SERVER['argv'][0] will be path to wp, should be same as $_SERVER['SCRIPT_FILENAME']
+	 *   - will have an $_SERVER['argc']
+	 *
+	 * CRON:
+	 *   - [REQUEST_URI] => /wp-cron.php
+	 *   - [PHP_SELF] => /wp-cron.php
+	 *   - [SCRIPT_NAME] => /wp-cron.php
+	 */
 	private function set_context() {
 		$context = $this->plugin->helper->urlmatcher->get_context();
 
@@ -76,74 +96,47 @@ class APM {
 	}
 
 	/**
-	 * This is practically a copy of the default is_admin() function in WordPress core (as of 4.9.1).
+	 * Based on the context, return a string that gets appended to the standard app name. If
+	 * none of those match, because we're on frontend, then an empty string is returned.
 	 *
-	 * Reason we need this is because is_admin returns true for a bunch of other requests as well that
-	 * are technically not the admin. Those are:
-	 * - load-scripts.php
-	 * - load-styles.php
-	 * - ajax requests
+	 * Only one of them can be returned. In order of importance:
+	 * - cli
+	 * - rest
+	 * - cron
+	 * - ajax
+	 * - admin
+	 * - frontend
 	 *
-	 * {@see https://codex.wordpress.org/Function_Reference/is_admin}
-	 *
-	 * This will STILL be true for ajax requests, but the load-scripts and load-styles should no longer
-	 * be counted as Admin requests.
-	 *
-	 * @return boolean whether we're actually on the
+	 * @return string              name of the context based on the context
 	 */
-	private function is_admin() {
-		if ( isset( $GLOBALS['current_screen'] ) ) {
-			return $GLOBALS['current_screen']->in_admin();
-		} elseif ( defined( 'WP_ADMIN' ) ) {
-			return WP_ADMIN;
+	private function get_context() {
+		switch ( true ) {
+			case $this->cli;
+				return 'CLI';
+				break;
+			case $this->rest;
+				return 'REST';
+				break;
+			case $this->cron:
+				return 'CRON';
+				break;
+			case $this->ajax;
+				return 'AJAX';
+				break;
+			case $this->admin;
+				return 'Admin';
+				break;
+			case $this->frontend;
+				return 'Frontend';
+				break;
+			default:
+				return '';
+				break;
 		}
-
-		return false;
 	}
 
-	/**
-	 * Sets up request context so we can separate the apps in the apm by name and set additional
-	 * custom variables later.
-	 */
-	private function maybe_set_context() {
-		/**
-		 * Admin, CLI, CRON are available at plugins_loaded.
-		 */
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			$this->cli = true;
-			$this->config();
-			$this->set_cli_transaction();
-			return;
-		}
+	private function prepare_extra_data() {
 
-		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
-			$this->cron = true;
-			$this->config();
-			$this->set_cron_transaction();
-			return;
-		}
-
-		/**
-		 * Admin is less important than AJAX, so we'll set it here (because it's available),
-		 * but we're not going to config or break because AJAX is only available later.
-		 */
-		if ( $this->is_admin() ) {
-			$this->admin = true;
-		}
-
-		/**
-		 * If we've gotten here, we're not in CRON, CLI, so let's schedule the next ones:
-		 * - wp_default_styles: check for AJAX, Admin, or Front end
-		 * - rest_api_init: check for REST
-		 *
-		 * Why can't we use wp for AJAX check? Because wp doesn't run for AJAX
-		 * requests...
-		 *
-		 * And then if any of those fire, unhook the ones following it
-		 */
-		add_action( 'wp_default_styles', array( $this, 'maybe_set_context_to_ajax' ) );
-		add_action( 'rest_api_init', array( $this, 'maybe_set_context_to_rest' ) );
-		add_action( 'wp', array( $this, 'maybe_set_context_to_fe' ) );
 	}
 
 	/**
@@ -298,45 +291,7 @@ class APM {
 		return apply_filters( 'mindsize_nr_app_name', $app_name, $context );
 	}
 
-	/**
-	 * Based on the context, return a string that gets appended to the standard app name. If
-	 * none of those match, because we're on frontend, then an empty string is returned.
-	 *
-	 * Only one of them can be returned. In order of importance:
-	 * - cli
-	 * - rest
-	 * - cron
-	 * - ajax
-	 * - admin
-	 * - frontend
-	 *
-	 * @return string              name of the context based on the context
-	 */
-	private function get_context() {
-		switch ( true ) {
-			case $this->cli;
-				return 'CLI';
-				break;
-			case $this->rest;
-				return 'REST';
-				break;
-			case $this->cron:
-				return 'CRON';
-				break;
-			case $this->ajax;
-				return 'AJAX';
-				break;
-			case $this->admin;
-				return 'Admin';
-				break;
-			case $this->frontend;
-				return 'Frontend';
-				break;
-			default:
-				return '';
-				break;
-		}
-	}
+
 
 	/**
 	 * Disable New Relic autorum
@@ -422,9 +377,6 @@ class APM {
 		newrelic_name_transaction( apply_filters( 'wp_nr_cli_transaction_name', $transaction ) );
 	}
 
-	private function set_cron_transaction() {
-		// Currently there's no way to reliably figure out which cron schedule we're running
-	}
 
 	/**
 	 * Called from {@see maybe_set_context_to_ajax}.
