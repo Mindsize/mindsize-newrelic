@@ -172,22 +172,22 @@ class APM {
 	 */
 	private function prepare_extra_data() {
 		switch ( $this->get_context() ) {
-			case 'cli':
+			case 'CLI':
 				$this->set_cli_transaction();
 				break;
-			case 'cron':
+			case 'CRON':
 				$this->set_cron_transaction();
 				break;
-			case 'rest':
+			case 'REST':
 				$this->set_rest_transaction();
 				break;
-			case 'ajax':
+			case 'AJAX':
 				$this->set_ajax_transaction();
 				break;
-			case 'admin':
+			case 'Admin':
 				$this->set_admin_transaction();
 				break;
-			case 'frontend':
+			case 'Frontend':
 				$this->set_fe_transaction();
 				break;
 		}
