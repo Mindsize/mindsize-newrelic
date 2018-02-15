@@ -165,7 +165,7 @@ class APM {
 				$this->set_cli_transaction();
 				break;
 			case 'cron':
-				// nothing here
+				$this->set_cron_transaction();
 				break;
 			case 'rest':
 				$this->set_rest_transaction();
@@ -202,43 +202,13 @@ class APM {
 		$this->add_custom_parameter( 'theme_name', $theme->get_stylesheet()  );
 	}
 
-
-	/**
-	 * Hooked into {@see rest_api_init} action, this will test whether we're in a REST or front end
-	 * context.
-	 *
-	 * Hilarity: REST will go through wp IF and only IF it's not the index, or not a
-	 * notfound route.
-	 *
-	 * @return void
-	 */
-	public function maybe_set_context_to_rest() {
-		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-			$this->rest = true;
-			$this->config();
-			$this->set_rest_transaction();
-
-			/**
-			 * We're in REST territory, let's remove the FE check
-			 */
-			remove_action( 'wp', array( $this, 'maybe_set_context_to_fe' ) );
+	private function set_cron_transaction() {
+		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
+			return;
 		}
-	}
 
-	/**
-	 * Hooked into {@see wp} action, this will test whether we're in a REST or front end
-	 * context.
-	 *
-	 * @return void
-	 */
-	public function maybe_set_context_to_fe() {
-		/**
-		 * Since this is the last point the only possibility here is that we're in admin
-		 * - we're in Front end, which means everything else is false
-		 *
-		 * Either way, we need to call config here.
-		 */
-		$this->set_fe_transaction();
+		// sadly there's no way to know what cron tasks would be running here
+		newrelic_name_transaction( apply_filters( 'wp_nr_cron_transaction_name', 'CRON' ) );
 	}
 
 	/**
@@ -287,8 +257,6 @@ class APM {
 		return apply_filters( 'mindsize_nr_app_name', $app_name, $context );
 	}
 
-
-
 	/**
 	 * Disable New Relic autorum
 	 *
@@ -318,31 +286,7 @@ class APM {
 	}
 
 	/**
-	 * Custom variables set up automatically for all transactions:
-	 * - user id | 'not-logged-in'
-	 * - theme used
-	 */
-	public function set_custom_variables() {
-		/**
-		 * Set the user
-		 */
-		if ( is_user_logged_in() ) {
-			$user = wp_get_current_user();
-			newrelic_set_user_attributes( $user->ID, '', implode( ', ', $user->roles ) );
-		} else {
-			newrelic_set_user_attributes( 'not-logged-in', '', 'no-role' );
-		}
-
-		/**
-		 * Set the theme used
-		 */
-		$theme = wp_get_theme();
-		newrelic_add_custom_parameter( 'Theme Name', $theme->get( 'Name' ) );
-		newrelic_add_custom_parameter( 'Theme Files', $theme->get_stylesheet() );
-	}
-
-	/**
-	 * Called from {@see maybe_set_context_to_cli}
+	 * Called from {@see prepare_extra_data}
 	 *
 	 * @return void
 	 */
