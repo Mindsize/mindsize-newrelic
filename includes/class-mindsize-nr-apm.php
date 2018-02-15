@@ -241,6 +241,34 @@ class APM {
 	}
 
 	/**
+	 * Called from {@see maybe_set_context_to_rest}.
+	 *
+	 * @return void
+	 */
+	private function set_rest_transaction() {
+		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
+			return;
+		}
+		global $wp;
+
+		$transaction = apply_filters( 'mindsize_nr_rest_transaction_name', false, $this );
+
+		if ( false === $transaction ) {
+			if ( empty( $wp->query_vars['rest_route'] ) ) {
+				$route = '/';
+			} else {
+				$route = $wp->query_vars['rest_route'];
+			}
+
+			$transaction = sprintf( '%s %s', $_SERVER['REQUEST_METHOD'], $route );
+		}
+
+		if ( ! empty( $transaction ) ) {
+			newrelic_name_transaction( apply_filters( 'wp_nr_rest_transaction_name', $transaction ) );
+		}
+	}
+
+	/**
 	 * Ajax and Cron requests should not have the Browser extension
 	 */
 	private function maybe_disable_autorum() {
@@ -331,34 +359,6 @@ class APM {
 		}
 
 		newrelic_name_transaction( $transaction ) );
-	}
-
-	/**
-	 * Called from {@see maybe_set_context_to_rest}.
-	 *
-	 * @return void
-	 */
-	private function set_rest_transaction() {
-		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
-			return;
-		}
-		global $wp;
-
-		$transaction = apply_filters( 'mindsize_nr_rest_transaction_name', false, $this );
-
-		if ( false === $transaction ) {
-			if ( empty( $wp->query_vars['rest_route'] ) ) {
-				$route = '/';
-			} else {
-				$route = $wp->query_vars['rest_route'];
-			}
-
-			$transaction = sprintf( '%s %s', $_SERVER['REQUEST_METHOD'], $route );
-		}
-
-		if ( ! empty( $transaction ) ) {
-			newrelic_name_transaction( apply_filters( 'wp_nr_rest_transaction_name', $transaction ) );
-		}
 	}
 
 	/**
