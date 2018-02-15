@@ -202,41 +202,6 @@ class APM {
 		$this->add_custom_parameter( 'theme_name', $theme->get_stylesheet()  );
 	}
 
-	/**
-	 * Hooked into {@see wp_default_styles}, this will determine whether we're in an AJAX context.
-	 * If we are, we're unhooking the REST check.
-	 *
-	 * @return void
-	 */
-	public function maybe_set_context_to_ajax() {
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			$this->ajax = true;
-			$this->set_ajax_transaction();
-
-			/**
-			 * Because we've determined we're in AJAX context, we're gonna set the app to AJAX, and then
-			 * remove the check for REST and FE.
-			 */
-			remove_action( 'rest_api_init', array( $this, 'maybe_set_context_to_rest' ) );
-			remove_action( 'wp', array( $this, 'maybe_set_context_to_fe' ) );
-		}
-		/**
-		 * Setting it here will cause both front end AND REST be set to true, but since we're getting our
-		 * context in an order where REST comes first, this is acceptable.
-		 */
-		$this->frontend = ! ( $this->admin || $this->cron || $this->ajax || $this->cli );
-
-		/**
-		 * The reason I have this here, in wp_default_styles, is because this is the first time where I can
-		 * semi-reliably tell what's going on. If we're not in AJAX, we're either Admin or Front end at
-		 * this point. We're not unhooking the rest_api_init, because that comes later, so we *could* be in
-		 * rest context as well.
-		 *
-		 * The downside of this is that the app name will be set twice. The upside is that there's literally
-		 * no other way to achieve this.
-		 */
-		$this->config();
-	}
 
 	/**
 	 * Hooked into {@see rest_api_init} action, this will test whether we're in a REST or front end
@@ -419,13 +384,11 @@ class APM {
 
 		$transaction = apply_filters( 'mindsize_nr_ajax_transaction_name', false, $this );
 
-		if ( false === $transaction ) {
+		if ( false === $transaction || '' === $transaction || ! is_string( $trnasaction ) ) {
 			$transaction = array_key_exists( 'action', $_REQUEST ) ? $_REQUEST['action'] : 'generic ajax request';
 		}
 
-		if ( ! empty( $transaction ) ) {
-			newrelic_name_transaction( apply_filters( 'wp_nr_ajax_transaction_name', $transaction ) );
-		}
+		newrelic_name_transaction( $transaction ) );
 	}
 
 	/**
