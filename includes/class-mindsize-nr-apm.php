@@ -201,6 +201,36 @@ class APM {
 		$this->add_custom_parameter( 'theme_name', $theme->get_stylesheet()  );
 	}
 
+	/**
+	 * Called from {@see prepare_extra_data}
+	 *
+	 * @return void
+	 */
+	private function set_cli_transaction() {
+		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
+			return;
+		}
+
+		$transaction = apply_filters( 'mindsize_nr_cli_transaction_name', false, $this );
+
+		if ( false === $transaction ) {
+			$transaction = sprintf( 'wp %s', implode( ' ', \WP_CLI::get_runner()->arguments ) );
+		}
+
+		$assoc_args = \WP_CLI::get_runner()->assoc_args;
+
+		if ( ! empty( $assoc_args ) ) {
+			$assoc = [];
+			foreach( $assoc_args as $arg => $value ) {
+				$assoc[] = sprintf( '--%s=%s', $arg, $value );
+			}
+
+			newrelic_add_custom_parameter( 'assoc_args', implode( ' ', $assoc ) );
+		}
+
+		newrelic_name_transaction( apply_filters( 'wp_nr_cli_transaction_name', $transaction ) );
+	}
+
 	private function set_cron_transaction() {
 		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
 			return;
@@ -283,37 +313,6 @@ class APM {
 
 		return $template;
 	}
-
-	/**
-	 * Called from {@see prepare_extra_data}
-	 *
-	 * @return void
-	 */
-	private function set_cli_transaction() {
-		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
-			return;
-		}
-
-		$transaction = apply_filters( 'mindsize_nr_cli_transaction_name', false, $this );
-
-		if ( false === $transaction ) {
-			$transaction = sprintf( 'wp %s', implode( ' ', \WP_CLI::get_runner()->arguments ) );
-		}
-
-		$assoc_args = \WP_CLI::get_runner()->assoc_args;
-
-		if ( ! empty( $assoc_args ) ) {
-			$assoc = [];
-			foreach( $assoc_args as $arg => $value ) {
-				$assoc[] = sprintf( '--%s=%s', $arg, $value );
-			}
-
-			newrelic_add_custom_parameter( 'assoc_args', implode( ' ', $assoc ) );
-		}
-
-		newrelic_name_transaction( apply_filters( 'wp_nr_cli_transaction_name', $transaction ) );
-	}
-
 
 	/**
 	 * Called from {@see maybe_set_context_to_ajax}.
