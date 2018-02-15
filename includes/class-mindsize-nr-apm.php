@@ -324,7 +324,7 @@ class APM {
 			$transaction = array_key_exists( 'action', $_REQUEST ) ? $_REQUEST['action'] : 'generic ajax request';
 		}
 
-		newrelic_name_transaction( $transaction ) );
+		newrelic_name_transaction( $transaction );
 	}
 
 	/**
