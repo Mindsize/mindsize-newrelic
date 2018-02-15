@@ -167,6 +167,29 @@ class APM {
 	}
 
 	/**
+	 * Returns the app name to be used by logging. By default it will be the host as set in the home_url,
+	 * appended by the context, if it's not the front page.
+	 *
+	 * Examples:
+	 * example.com CLI
+	 * example.com REST
+	 * example.com CRON
+	 * example.com AJAX
+	 * example.com Admin
+	 * example.com
+	 *
+	 * @return string            name to be used as the app name
+	 */
+	private function get_appname() {
+		$context = $this->get_context();
+		$home_url = parse_url( home_url() );
+
+		$app_name = $home_url['host'] . ( isset( $home_url['path'] ) ? $home_url['path'] : '' ) . ' ' . $context;
+
+		return apply_filters( 'mindsize_nr_app_name', $app_name, $context );
+	}
+
+	/**
 	 * Hooked into {@see shutdown}, this will populate everything. Shutdown happens everywhere, and will have
 	 * all the information available.
 	 */
@@ -397,29 +420,6 @@ class APM {
 		} else {
 			add_action( 'pre_amp_render_post', array( $this, 'disable_nr_autorum' ), 9999, 1 );
 		}
-	}
-
-	/**
-	 * Returns the app name to be used by logging. By default it will be the host as set in the home_url,
-	 * appended by the context, if it's not the front page.
-	 *
-	 * Examples:
-	 * example.com CLI
-	 * example.com REST
-	 * example.com CRON
-	 * example.com AJAX
-	 * example.com Admin
-	 * example.com
-	 *
-	 * @return string            name to be used as the app name
-	 */
-	private function get_appname() {
-		$context = $this->get_context();
-		$home_url = parse_url( home_url() );
-
-		$app_name = $home_url['host'] . ( isset( $home_url['path'] ) ? $home_url['path'] : '' ) . ' ' . $context;
-
-		return apply_filters( 'mindsize_nr_app_name', $app_name, $context );
 	}
 
 	/**
