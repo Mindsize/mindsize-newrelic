@@ -155,6 +155,18 @@ class APM {
 	}
 
 	/**
+	 * Return default configuration that can be filtered.
+	 *
+	 * @return array    default configuration values
+	 */
+	private function get_default_config() {
+		return [
+			'newrelic.appname' => $this->get_appname(),
+			'newrelic.capture_params' => $this->plugin->helper->get_capture_url(),
+		];
+	}
+
+	/**
 	 * Hooked into {@see shutdown}, this will populate everything. Shutdown happens everywhere, and will have
 	 * all the information available.
 	 */
@@ -385,18 +397,6 @@ class APM {
 		} else {
 			add_action( 'pre_amp_render_post', array( $this, 'disable_nr_autorum' ), 9999, 1 );
 		}
-	}
-
-	/**
-	 * Return default configuration that can be filtered.
-	 *
-	 * @return array    default configuration values
-	 */
-	private function get_default_config() {
-		return [
-			'newrelic.appname' => $this->get_appname(),
-			'newrelic.capture_params' => $this->plugin->helper->get_capture_url(),
-		];
 	}
 
 	/**
