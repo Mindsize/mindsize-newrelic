@@ -231,6 +231,11 @@ class APM {
 		newrelic_name_transaction( apply_filters( 'wp_nr_cli_transaction_name', $transaction ) );
 	}
 
+	/**
+	 * Called from {@see maybe_set_context_to_rest}.
+	 *
+	 * @return void
+	 */
 	private function set_cron_transaction() {
 		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
 			return;
