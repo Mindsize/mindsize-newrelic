@@ -328,9 +328,7 @@ class APM {
 	 * @return mixed
 	 */
 	public function set_template( $template ) {
-		if ( function_exists( 'newrelic_add_custom_parameter' ) ) {
-			newrelic_add_custom_parameter( 'template', $template );
-		}
+		$this->add_custom_parameter( 'template', $template );
 
 		return $template;
 	}
