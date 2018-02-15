@@ -521,14 +521,16 @@ class APM {
 		if ( ! empty( $transaction ) ) {
 			newrelic_name_transaction( apply_filters( 'wp_nr_pq_transaction_name', $transaction ) );
 		}
+
+		$this->set_post_id();
 	}
 
 	/**
-	 * Set post_id custom parameter if it's single post
+	 * Set post_id custom parameter if it's single post. Called from a fe transaction method
 	 *
 	 * @param $wp
 	 */
-	private function set_post_id( $wp ) {
+	private function set_post_id() {
 		if ( is_single() ) {
 			$this->add_custom_parameter( 'post_id', apply_filters( 'mindsize_nr_post_id', get_the_ID() ) );
 		}
