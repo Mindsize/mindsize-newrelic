@@ -274,6 +274,25 @@ class APM {
 	}
 
 	/**
+	 * Called from {@see maybe_set_context_to_ajax}.
+	 *
+	 * @return string
+	 */
+	private function set_ajax_transaction() {
+		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
+			return;
+		}
+
+		$transaction = apply_filters( 'mindsize_nr_ajax_transaction_name', false, $this );
+
+		if ( false === $transaction || '' === $transaction || ! is_string( $trnasaction ) ) {
+			$transaction = array_key_exists( 'action', $_REQUEST ) ? $_REQUEST['action'] : 'generic ajax request';
+		}
+
+		newrelic_name_transaction( $transaction ) );
+	}
+
+	/**
 	 * Ajax and Cron requests should not have the Browser extension
 	 */
 	private function maybe_disable_autorum() {
@@ -345,25 +364,6 @@ class APM {
 		$this->add_custom_parameter( 'template', $template );
 
 		return $template;
-	}
-
-	/**
-	 * Called from {@see maybe_set_context_to_ajax}.
-	 *
-	 * @return string
-	 */
-	private function set_ajax_transaction() {
-		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
-			return;
-		}
-
-		$transaction = apply_filters( 'mindsize_nr_ajax_transaction_name', false, $this );
-
-		if ( false === $transaction || '' === $transaction || ! is_string( $trnasaction ) ) {
-			$transaction = array_key_exists( 'action', $_REQUEST ) ? $_REQUEST['action'] : 'generic ajax request';
-		}
-
-		newrelic_name_transaction( $transaction ) );
 	}
 
 	/**
