@@ -293,6 +293,14 @@ class APM {
 	}
 
 	/**
+	 * There's nothing to do here, no need to name the transaction.
+	 *
+	 * The method is here for completeness' sake
+	 */
+	private function set_admin_transaction() {
+	}
+
+	/**
 	 * Ajax and Cron requests should not have the Browser extension
 	 */
 	private function maybe_disable_autorum() {
