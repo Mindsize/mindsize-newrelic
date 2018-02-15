@@ -269,13 +269,6 @@ class APM {
 	}
 
 	/**
-	 * Only include the template on the frontend
-	 */
-	private function include_template() {
-		add_filter( 'template_include', array( $this, 'set_template' ), 9999 );
-	}
-
-	/**
 	 * Return default configuration that can be filtered.
 	 *
 	 * @return array    default configuration values
