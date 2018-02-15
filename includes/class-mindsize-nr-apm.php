@@ -451,7 +451,7 @@ class APM {
 	}
 
 	/**
-	 * Set post_id custom parameter if it's single post. Called from a fe transaction method
+	 * Set post_id custom parameter if it's single post. Called from set_fe_transaction method
 	 *
 	 * @param $wp
 	 */
