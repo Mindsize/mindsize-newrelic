@@ -53,8 +53,26 @@ class APM {
 
 	private function set_context() {
 		$context = $this->plugin->helper->urlmatcher->get_context();
-		wp_die( es_preit( array( __FILE__ . ':' . __LINE__, $context ), true ) );
 
+		switch ( $context ) {
+			case 'cli':
+				$this->cli = true;
+				break;
+			case 'cron':
+				$this->cron = true;
+				break;
+			case 'rest':
+				$this->rest = true;
+				break;
+			case 'ajax':
+				$this->ajax = true;
+				break;
+			case 'admin':
+				$this->admin = true;
+				break;
+			case 'frontend':
+				$this->frontend = true;
+		}
 	}
 
 	/**
