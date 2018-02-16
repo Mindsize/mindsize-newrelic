@@ -69,6 +69,7 @@ class APM {
 	 *   - [REQUEST_URI] => /wp-cron.php
 	 *   - [PHP_SELF] => /wp-cron.php
 	 *   - [SCRIPT_NAME] => /wp-cron.php
+	 *   - $_GET['doing_cron'] => exists
 	 */
 	private function set_context() {
 		$context = $this->plugin->helper->urlmatcher->get_context();
