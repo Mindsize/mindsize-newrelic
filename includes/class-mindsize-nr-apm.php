@@ -166,6 +166,11 @@ class APM {
 			newrelic_capture_params( $this->config['newrelic.capture_params'] );
 		}
 
+		// all transactions are web transactions! Otherwise CLI would be counted as background job
+		if ( function_exists( 'newrelic_background_job' ) ) {
+			newrelic_background_job( false );
+		}
+
 		do_action( 'mindsize_nr_setup_config', $this->config );
 	}
 
