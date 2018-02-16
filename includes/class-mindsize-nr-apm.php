@@ -233,7 +233,8 @@ class APM {
 				break;
 			case 'Admin':
 				// the earliest is on plugins_loaded, which is ... now, so we can run it immediately
-				$this->set_admin_transaction();
+				add_action( 'current_screen', [ $this, 'set_admin_transaction' ] );
+
 				break;
 			case 'Frontend':
 				add_action( 'wp', [ $this, 'set_fe_transaction' ] );
@@ -350,7 +351,7 @@ class APM {
 
 		$transaction = apply_filters( 'mindsize_nr_ajax_transaction_name', false, $this );
 
-		if ( false === $transaction || '' === $transaction || ! is_string( $trnasaction ) ) {
+		if ( false === $transaction || '' === $transaction || ! is_string( $transaction ) ) {
 			$transaction = array_key_exists( 'action', $_REQUEST ) ? $_REQUEST['action'] : 'generic ajax request';
 		}
 
@@ -358,11 +359,27 @@ class APM {
 	}
 
 	/**
-	 * There's nothing to do here, no need to name the transaction.
-	 *
-	 * The method is here for completeness' sake
+	 * Name the transaction, and attach other data to it.
 	 */
-	private function set_admin_transaction() {
+	public function set_admin_transaction( $screen ) {
+		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
+			return;
+		}
+
+		$transaction = apply_filters( 'mindsize_nr_admin_transaction_name', false, $this );
+
+		if ( false === $transaction || '' === $transaction || ! is_string( $transaction ) ) {
+			$action = ( ! empty( $screen->action ) ) ? sprintf( ' - %s', $screen->action ) : '';
+			$transaction = sprintf( '%s%s', $screen->id, $action );
+		}
+
+		newrelic_name_transaction( $transaction );
+
+		$this->add_custom_parameter( 'base', $screen->base );
+		$this->add_custom_parameter( 'post_type', $screen->post_type );
+		$this->add_custom_parameter( 'taxonomy', $screen->taxonomy );
+		$this->add_custom_parameter( 'parent_base', $screen->parent_base );
+		$this->add_custom_parameter( 'parent_file', $screen->parent_file );
 	}
 
 	/**
