@@ -234,7 +234,7 @@ class APM {
 				add_action( 'wp', [ $this, 'set_fe_transaction' ] );
 				break;
 			default:
-				$this->log( 'wot' );
+				$this->log( $_SERVER );
 		}
 
 		/**
@@ -326,7 +326,10 @@ class APM {
 		}
 
 		if ( ! empty( $transaction ) ) {
+			$this->log( sprintf( 'App: %s | Transaction: %s at %s ', $this->get_appname(), $transaction, current_filter() ) );
 			newrelic_name_transaction( apply_filters( 'wp_nr_rest_transaction_name', $transaction ) );
+		} else {
+			$this->log( [ 'OMG NO THERE IS NO NAME', $_SERVER ] );
 		}
 	}
 
