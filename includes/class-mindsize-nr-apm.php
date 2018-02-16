@@ -26,6 +26,19 @@ class APM {
 		$this->plugin = $plugin;
 	}
 
+	private function log( $message ) {
+		$filename = MINDSIZE_NR_DIR . 'log.log';
+		$file = fopen( $filename, 'a+' );
+
+		if ( is_array( $message ) ) {
+			$message = print_r( $message, true );
+		}
+
+		$log = sprintf( '[%s]: %s' . PHP_EOL, date( DATE_ATOM ), $message );
+		fwrite( $file, $log );
+		fclose( $file );
+	}
+
 	/**
 	 * Let's start the plugin then!
 	 */
