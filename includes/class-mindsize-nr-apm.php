@@ -205,24 +205,29 @@ class APM {
 	}
 
 	/**
-	 * Hooked into {@see shutdown}, this will populate everything. Shutdown happens everywhere, and will have
-	 * all the information available.
+	 * Called directly from init, this runs at plugins_loaded.
+	 *
+	 * This will either hook all the context, or run them immediately if we have the data.
 	 */
 	public function populate_extra_data() {
 		switch ( $this->get_context() ) {
 			case 'CLI':
+				// we already have CLI info here, so we can call this
 				$this->set_cli_transaction();
 				break;
 			case 'CRON':
+				// we're just naming this, can be called immediately
 				$this->set_cron_transaction();
 				break;
 			case 'REST':
 				$this->set_rest_transaction();
 				break;
 			case 'AJAX':
+				// this can be run immediately as well
 				$this->set_ajax_transaction();
 				break;
 			case 'Admin':
+				// the earliest is on plugins_loaded, which is ... now, so we can run it immediately
 				$this->set_admin_transaction();
 				break;
 			case 'Frontend':
