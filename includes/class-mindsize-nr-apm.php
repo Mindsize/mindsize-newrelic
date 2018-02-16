@@ -231,8 +231,10 @@ class APM {
 				$this->set_admin_transaction();
 				break;
 			case 'Frontend':
-				$this->set_fe_transaction();
+				add_action( 'wp', [ $this, 'set_fe_transaction' ] );
 				break;
+			default:
+				$this->log( 'wot' );
 		}
 
 		/**
@@ -370,7 +372,7 @@ class APM {
 	 *
 	 * @param WP_Query $query
 	 */
-	private function set_fe_transaction() {
+	public function set_fe_transaction() {
 		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
 			return;
 		}
