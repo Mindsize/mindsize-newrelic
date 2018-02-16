@@ -35,13 +35,14 @@ class APM {
 		$this->config();
 		$this->maybe_disable_autorum();
 
+		// this needs a direct call because instead of actually calling the individual sets, we're hooking them the earliest in context
+		$this->populate_extra_data();
+
 		add_action( 'wp_async_task_before_job', array( $this, 'async_before_job_track_time' ), PHP_INT_MAX, 1 );
 		add_action( 'wp_async_task_after_job', array( $this, 'async_after_job_set_attribute' ), PHP_INT_MAX, 1 );
 
 		// this needs to be here because I don't have the information any longer on shutdown
 		add_filter( 'template_include', array( $this, 'set_template' ), PHP_INT_MAX );
-
-		add_action( 'shutdown', array( $this, 'populate_extra_data' ) );
 
 		// if woocommerce is present. These are called via populate_extra_data
 		if ( function_exists( 'wc' ) ) {
