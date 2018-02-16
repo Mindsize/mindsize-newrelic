@@ -220,7 +220,7 @@ class APM {
 				$this->set_cron_transaction();
 				break;
 			case 'REST':
-				$this->set_rest_transaction();
+				add_action( 'rest_api_init', [ $this, 'set_rest_transaction'] );
 				break;
 			case 'AJAX':
 				// this can be run immediately as well
@@ -305,7 +305,7 @@ class APM {
 	 *
 	 * @return void
 	 */
-	private function set_rest_transaction() {
+	public function set_rest_transaction() {
 		if ( ! function_exists( 'newrelic_name_transaction' ) ) {
 			return;
 		}
