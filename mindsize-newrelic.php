@@ -22,6 +22,7 @@ define( 'MINDSIZE_NR_SLUG', 'mindsize-newrelic' );
 define( 'MINDSIZE_NR_FILE', __FILE__ );
 define( 'MINDSIZE_NR_DIR', plugin_dir_path( MINDSIZE_NR_FILE ) );
 define( 'MINDSIZE_NR_URL', untrailingslashit( plugins_url( basename( plugin_dir_path( MINDSIZE_NR_FILE ) ), basename( MINDSIZE_NR_FILE ) ) ) );
+define( 'WP_NR_BASENAME', plugin_basename( __FILE__ )  );
 
 if( file_exists( MINDSIZE_NR_DIR . 'vendor/autoload_52.php' ) ) {
 	require( MINDSIZE_NR_DIR . 'vendor/autoload_52.php' );
